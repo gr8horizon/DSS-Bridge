@@ -21,7 +21,7 @@ client = SimpleUDPClient(ip, port)  # Create client
 client.send_message("/some/address", 123)   # Send float message
 client.send_message("/some/address", [1, 2., "hello"])  # Send message with int, float and string
 
-
+# todo: add listener to /dev for ttyusbmodem changes and store serial numbers of arduinos. lightweight polling?
 
 class DSSBridgeApp(object):
 	def __init__(self):
