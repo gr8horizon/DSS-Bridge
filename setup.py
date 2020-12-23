@@ -1,7 +1,7 @@
 from setuptools import setup
 
 APP = ['DSS_Bridge.py']
-DATA_FILES = []
+DATA_FILES = ['Audium_Logo_Question.png','Audium_Logo.png']
 OPTIONS = {
     'argv_emulation': True,
     'iconfile': 'Audium_Logo.icns',
@@ -17,5 +17,5 @@ setup(
     name='DSS Bridge',
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
-    setup_requires=['py2app'], install_requires=['rumps']
+    setup_requires=['py2app'], install_requires=['rumps'], 
 )

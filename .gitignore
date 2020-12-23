@@ -1,3 +1,4 @@
 
 *.pyc
 *.decTest
+.DS_Store

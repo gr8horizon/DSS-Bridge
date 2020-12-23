@@ -13,8 +13,8 @@ rumps.debug_mode(True)
 class DSSBridgeApp(object):
 	def __init__(self):
 		self.app = rumps.App("DSS Bridge")
-		self.app.icon = "Audium_Logo.png"
-		self.app.title = "DSS?"
+		self.app.icon = "Audium_Logo_Question.png"
+		self.app.title = ""
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="-", callback=None)
 		self.app.menu = [self.DSS_button, self.find_DSS_button]
@@ -40,10 +40,13 @@ class DSSBridgeApp(object):
 
 		if DSS_IDs:
 			self.DSS_button.title = ' '.join(sorted(DSS_IDs))
-			self.app.title = "DSS"
+			# self.app.title = "DSS"
+			self.app.icon = "Audium_Logo.png"
 		else:
 			self.DSS_button.title = '-'
-			self.app.title = "DSS?"
+			# self.app.title = "DSS?"
+			self.app.icon = "Audium_Logo_Question.png"
+			rumps.alert(title="Audium DSS Bridge", message="No DSS Found", icon_path="Audium_Logo_Question.png")
 
 	def run(self):
 		self.app.run()
