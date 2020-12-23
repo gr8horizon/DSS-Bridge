@@ -10,6 +10,19 @@ import rumps
 
 rumps.debug_mode(True)
 
+import socket 
+from pythonosc.udp_client import SimpleUDPClient
+
+ip = socket.gethostbyname(socket.gethostname())
+port = 8000
+
+client = SimpleUDPClient(ip, port)  # Create client
+
+client.send_message("/some/address", 123)   # Send float message
+client.send_message("/some/address", [1, 2., "hello"])  # Send message with int, float and string
+
+
+
 class DSSBridgeApp(object):
 	def __init__(self):
 		self.app = rumps.App("DSS Bridge")
@@ -39,7 +52,7 @@ class DSSBridgeApp(object):
 			s.close()
 
 		if DSS_IDs:
-			self.DSS_button.title = ' '.join(sorted(DSS_IDs))
+			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
 			# self.app.title = "DSS"
 			self.app.icon = "Audium_Logo.png"
 		else:
@@ -52,6 +65,6 @@ class DSSBridgeApp(object):
 		self.app.run()
 		
 
-if __name__ == '__main__':
-	app = DSSBridgeApp()
-	app.run()
+# if __name__ == '__main__':
+	# DSSapp = DSSBridgeApp()
+	# DSSapp.run()
