@@ -37,7 +37,7 @@ class DSSBridgeApp(object):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
 		device_names = os.listdir("/dev")
-		r = re.compile("tty.usbmodem.*")  # tty. or cu. (?)
+		r = re.compile("cu.usbmodem.*")  # tty. doesn't give you excluseive access (cu. does)
 		port_names = [m.group(0) for m in map(r.match, device_names) if m is not None]
 
 		for port_name in port_names:
@@ -65,6 +65,6 @@ class DSSBridgeApp(object):
 		self.app.run()
 		
 
-# if __name__ == '__main__':
-	# DSSapp = DSSBridgeApp()
-	# DSSapp.run()
+if __name__ == '__main__':
+	DSSapp = DSSBridgeApp()
+	DSSapp.run()
