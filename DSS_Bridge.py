@@ -37,11 +37,16 @@ class DSSBridgeApp(object):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
 		device_names = os.listdir("/dev")
-		r = re.compile("cu.usbmodem.*")  # tty. doesn't give you excluseive access (cu. does)
+		r = re.compile("cu.usbmodem.*")  # tty. doesn't give you exclusive access (cu. does)
 		port_names = [m.group(0) for m in map(r.match, device_names) if m is not None]
 
 		for port_name in port_names:
-			s = serial.Serial(port=("/dev/" + port_name), baudrate=57600, dsrdtr=True, timeout=1)
+			try:
+				s = serial.Serial(port=("/dev/" + port_name), baudrate=57600, dsrdtr=True, timeout=1)
+			except serial.SerialException: 
+				rumps.alert(title="Audium DSS Bridge", message="Could not open Serial Port:\n\n /dev/"+port_name, icon_path="Audium_Logo_Question.png")
+				pass
+				break 
 			time.sleep(0.2)
 			s.write(b'?\n')  # request DSS_ID from this port
 			DSS_ID = s.readline().decode()
