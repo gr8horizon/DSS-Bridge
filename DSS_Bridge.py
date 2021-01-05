@@ -33,7 +33,7 @@ class DSSBridgeApp(object):
 		self.app.menu = [self.DSS_button, self.find_DSS_button]
 		self.DSS = [];
 		self.find_DSS()
-		print(self.DSS)
+		# print(self.DSS)
 
 
 	def find_DSS(self, *etc):
@@ -53,10 +53,8 @@ class DSSBridgeApp(object):
 			time.sleep(0.2)
 			s.write(b'?\n')  # request DSS_ID from this port
 			DSS_ID = s.readline().decode()  # contains e.g. "A\r\n"
-			print(DSS_ID)
+			# print(DSS_ID)
 			DSS_IDs.append(DSS_ID[0])
-			# s.write((DSS_ID+"\n").encode())  # request output states from DSS with this DSS_ID
-			# DSS_State = s.readline()
 			s.close()
 
 		if DSS_IDs:
@@ -67,6 +65,7 @@ class DSSBridgeApp(object):
 		else:
 			self.DSS_button.title = '-'
 			self.app.icon = "Audium_Logo_Question.png"
+			self.DSS = []
 			rumps.alert(title="Audium DSS Bridge", 
 				message="No DSS Found", 
 				icon_path="Audium_Logo_Question.png")
@@ -79,7 +78,11 @@ def filter_handler(address, *args):
     print("OSC Message Received: " + f"{address}: {args}")
 
 def DSS_handler(address, *args):
-	client.send_message("/DSS", sorted(DSSapp.DSS.keys())) 
+	DSSapp.find_DSS()
+	if DSSapp.DSS:
+		client.send_message("/DSS", sorted(DSSapp.DSS.keys())) 
+	else:
+		client.send_message("/DSS", "?")
 
 def DSS_switcher_handler(address, *args):
 	myDSS_ID = address[-1]
