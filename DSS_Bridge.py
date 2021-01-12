@@ -10,7 +10,7 @@
 import os, re, serial, time, glob
 import rumps
 
-rumps.debug_mode(True)
+rumps.debug_mode(False)
 
 import socket 
 from pythonosc.udp_client import SimpleUDPClient
@@ -31,29 +31,33 @@ class DSSBridgeApp(object):
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="-", callback=None)
 		self.app.menu = [self.DSS_button, self.find_DSS_button]
-		self.DSS = [];
+		self.DSS = {}  # todo: collapse this into SerialPorts
+		self.SerialPorts = {}  # serial.Serial objects (open ports)
+		# self.port_names = []
 		self.find_DSS()
-		# print(self.DSS)
 
 
 	def find_DSS(self, *etc):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
 		port_names = glob.glob("/dev/cu.usbmodem*")
+		# if set(possible_port_names) != set(self.port_names):
+		# 	self.port_names = possible_port_names
+
+		for port in self.SerialPorts.values():
+			port.close()
 
 		for port_name in port_names:
 			try:
-				s = serial.Serial(port=(port_name), baudrate=57600, dsrdtr=True, timeout=1)
+				s = serial.Serial(port=(port_name), baudrate=1000000, dsrdtr=True, timeout=1)
 			except serial.SerialException: 
-				rumps.alert(title="Audium DSS Bridge", 
-					message="Could not open Serial Port:\n\n" + port_name, 
+				rumps.alert(title="Audium DSS Bridge", message="Could not open Serial Port:\n\n" + port_name, 
 					icon_path="Audium_Logo_Question.png")
 				pass
 				continue 
 			time.sleep(0.2)
 			s.write(b'?\n')  # request DSS_ID from this port
 			DSS_ID = s.readline().decode()  # contains e.g. "A\r\n"
-			# print(DSS_ID)
 			DSS_IDs.append(DSS_ID[0])
 			s.close()
 
@@ -61,13 +65,13 @@ class DSSBridgeApp(object):
 			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
 			self.app.icon = "Audium_Logo.png"
 			self.DSS = dict(zip(DSS_IDs, port_names))
-			# print(self.DSS)
+			for DSS_ID in DSS_IDs:
+				self.SerialPorts[DSS_ID] = serial.Serial(port=(self.DSS[DSS_ID]), baudrate=1000000, dsrdtr=True, timeout=1)
 		else:
 			self.DSS_button.title = '-'
 			self.app.icon = "Audium_Logo_Question.png"
 			self.DSS = []
-			rumps.alert(title="Audium DSS Bridge", 
-				message="No DSS Found", 
+			rumps.alert(title="Audium DSS Bridge", message="No DSS Found", 
 				icon_path="Audium_Logo_Question.png")
 
 	def run(self):
@@ -86,20 +90,32 @@ def DSS_handler(address, *args):
 
 def DSS_switcher_handler(address, *args):
 	myDSS_ID = address[-1]
-	s = serial.Serial(port=DSSapp.DSS[myDSS_ID], baudrate=57600, dsrdtr=True, timeout=1)
-
+	s = DSSapp.SerialPorts[myDSS_ID]
 	if len(args) > 0:
 		for arg in args:
 			s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch	
-			s.readline()  # dummy read (todo: turn off echo in arduino)
-
+			s.readline()  # dummy read (todo: turn off echo in arduino?)
 	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
 	DSS_State = s.readline().decode()
 	client.send_message("/DSS/" + myDSS_ID, DSS_State)  # Send DSS output state
-	s.close()
+
+def dev_watcher():
+	while True:
+		time.sleep(1)
+		port_names = glob.glob("/dev/cu.usbmodem*")
+		# print(set(port_names))
+		# print(set(DSSapp.DSS.values()))
+		if set(port_names) != set(DSSapp.DSS.values()):
+			print("Different DSS Ports!")
+			print(port_names)
+			if port_names: # poor checking... think about this
+				DSSapp.find_DSS()
 
 
 if __name__ == '__main__':
+	DSSapp = DSSBridgeApp()
+
+	#---- OSC ----
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
@@ -113,8 +129,12 @@ if __name__ == '__main__':
 	server_thread.start()
 
 	client = SimpleUDPClient("127.0.0.1", client_port)  # Create client
+	#--------------
 
-	DSSapp = DSSBridgeApp()
+	# todo: think about what to do when we lose all or 1 or gain an additional one.
+	# devwatcher_thread = threading.Thread(target=dev_watcher)
+	# devwatcher_thread.start()
+
 	DSSapp.run()
 
 

@@ -1,43 +1,49 @@
-import time
-from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
-from watchdog import *
-
-watchdog.
+# can't seem to use fsevents with /dev (?)
 
 
 
-if __name__ == "__main__":
-    patterns = "*"
-    ignore_patterns = ""
-    ignore_directories = False
-    case_sensitive = True
-    my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
+# import sys
+# import time
+# import logging
+# from watchdog.observers import Observer
+# from watchdog.events import LoggingEventHandler
 
-class MyHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
-        print(event.event_type, event.src_path)
+# if __name__ == "__main__":
+#     logging.basicConfig(level=logging.INFO,
+#                         format='%(asctime)s - %(message)s',
+#                         datefmt='%Y-%m-%d %H:%M:%S')
+#     path = sys.argv[1] if len(sys.argv) > 1 else "/dev/"
+#     event_handler = LoggingEventHandler()
+#     observer = Observer()
+#     observer.schedule(event_handler, path, recursive=True)
+#     observer.start()
+#     try:
+#         while True:
+#             time.sleep(1)
+#     finally:
+#         observer.stop()
+#         observer.join()
 
-    def on_created(self, event):
-        print("on_created", event.src_path)
+#---------------------------------------------------
 
-    def on_deleted(self, event):
-        print("on_deleted", event.src_path)
+# import time, glob
 
-    def on_modified(self, event):
-        print("on_modified", event.src_path)
+# t0 = time.time()
+# for i in range(1000):
+# 	a = glob.glob("/dev/cu.usbmodem*")
+# print(time.time() - t0)
+# print(a)
 
-    def on_moved(self, event):
-        print("on_moved", event.src_path)
+#---------------------------------------------------
 
+# from fsevents import Observer
+# observer = Observer()
+# observer.start()
 
-event_handler = MyHandler()
-observer = Observer()
-observer.schedule(event_handler, path='/dev/', recursive=False)
-observer.start()
+# def callback(FileEvent):
+#     print(FileEvent.mask)
+#     print(FileEvent.name)
 
-while True:
-    try:
-        pass
-    except KeyboardInterrupt:
-        observer.stop()
+# from fsevents import Stream
+# stream = Stream(callback, "/dev/")
+# observer.schedule(stream)
