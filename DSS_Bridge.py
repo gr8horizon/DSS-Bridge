@@ -101,8 +101,23 @@ def DSS_switcher_handler(address, *args):
 			elif arg == "clear":
 				s.write('-\n'.encode())
 				s.readline()  # dummy read (todo: turn off echo in arduino?)
+			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ
+				if arg == 0.0:
+					spkr = '1000000000000000100000000000000010000000000000001000000000000000'
+				elif arg == 1.0:
+					spkr = '0100000000000000010000000000000001000000000000000100000000000000'
+				elif arg == 2.0:
+					spkr = '0010000000000000001000000000000000100000000000000010000000000000'
+				elif arg == 3.0:
+					spkr = '0001000000000000000100000000000000010000000000000001000000000000'
+				elif arg == 4.0:
+					spkr = '0000100000000000000010000000000000001000000000000000100000000000'
+				elif arg == 5.0:
+					spkr = '0000010000000000000001000000000000000100000000000000010000000000'
+
+				s.write((myDSS_ID + spkr + "\n").encode())
 			else:
-				s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+				s.write((myDSS_ID + ("%02d" % spkr) + "\n").encode())  # toggle output state of one switch
 				# no readline here (removed from Arduino code for speed)
 	else: # poll outputs		
 		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
@@ -132,8 +147,8 @@ if __name__ == '__main__':
 	dispatcher.set_default_handler(print)
 
 	# MAX
-	server_port = 1337  # OSC-Receive (into DSS_Bridge)
-	client_port = 1338  # OSC-Send (out of DSS_Bridge)
+	server_port = 1337  # OSC-Receive (to DSS_Bridge)
+	client_port = 1338  # OSC-Send (from DSS_Bridge)
 	
 	# IPAD
 
