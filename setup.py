@@ -1,3 +1,5 @@
+# run python3 setup.py py2app
+
 from setuptools import setup
 
 APP = ['DSS_Bridge.py']

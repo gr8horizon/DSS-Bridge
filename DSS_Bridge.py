@@ -83,6 +83,7 @@ def filter_handler(address, *args):
 
 def DSS_handler(address, *args):
 	DSSapp.find_DSS()
+	time.sleep(0.5)
 	if DSSapp.DSS:
 		client.send_message("/DSS", sorted(DSSapp.DSS.keys())) 
 	else:
@@ -93,11 +94,20 @@ def DSS_switcher_handler(address, *args):
 	s = DSSapp.SerialPorts[myDSS_ID]
 	if len(args) > 0:
 		for arg in args:
-			s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch	
-			s.readline()  # dummy read (todo: turn off echo in arduino?)
-	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
-	DSS_State = s.readline().decode()
-	client.send_message("/DSS/" + myDSS_ID, DSS_State)  # Send DSS output state
+			if arg == "reset":
+				s.write((myDSS_ID + '+\n').encode())
+				time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
+				s.readline()  # dummy read (todo: turn off echo in arduino?)
+			elif arg == "clear":
+				s.write('-\n'.encode())
+				s.readline()  # dummy read (todo: turn off echo in arduino?)
+			else:
+				s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+				# no readline here (removed from Arduino code for speed)
+	else: # poll outputs		
+		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
+		DSS_State = s.readline().decode().strip()
+		client.send_message("/DSS/" + myDSS_ID, DSS_State)  # Send DSS output state
 
 def dev_watcher():
 	while True:
@@ -121,14 +131,19 @@ if __name__ == '__main__':
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
 	dispatcher.set_default_handler(print)
 
+	# MAX
 	server_port = 1337  # OSC-Receive (into DSS_Bridge)
 	client_port = 1338  # OSC-Send (out of DSS_Bridge)
 	
-	server = ThreadingOSCUDPServer(("127.0.0.1", server_port), dispatcher)
+	# IPAD
+
+	# Plugin
+
+	server = ThreadingOSCUDPServer(("192.168.42.68", server_port), dispatcher)
 	server_thread = threading.Thread(target=server.serve_forever)
 	server_thread.start()
 
-	client = SimpleUDPClient("127.0.0.1", client_port)  # Create client
+	client = SimpleUDPClient("192.168.42.68", client_port)  # Create client
 	#--------------
 
 	# todo: think about what to do when we lose all or 1 or gain an additional one.
