@@ -101,8 +101,9 @@ def DSS_switcher_handler(address, *args):
 			elif arg == "clear":
 				s.write('-\n'.encode())
 				s.readline()  # dummy read (todo: turn off echo in arduino?)
-			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ
+			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
 				if arg == 0.0:
+					#       1234567812345678123456781234567812345678123456781234567812345678
 					spkr = '1000000000000000100000000000000010000000000000001000000000000000'
 				elif arg == 1.0:
 					spkr = '0100000000000000010000000000000001000000000000000100000000000000'
@@ -116,13 +117,16 @@ def DSS_switcher_handler(address, *args):
 					spkr = '0000010000000000000001000000000000000100000000000000010000000000'
 
 				s.write((myDSS_ID + spkr + "\n").encode())
-			else:
-				s.write((myDSS_ID + ("%02d" % spkr) + "\n").encode())  # toggle output state of one switch
+				# print("PLUGIN: " + myDSS_ID + spkr)
+			elif isinstance(arg, int):
+				s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+				# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
 				# no readline here (removed from Arduino code for speed)
-	else: # poll outputs		
+	else: # poll outputs if no args		
 		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
 		DSS_State = s.readline().decode().strip()
-		client.send_message("/DSS/" + myDSS_ID, DSS_State)  # Send DSS output state
+		# print("   MAX: " + DSS_State)
+		client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
 
 def dev_watcher():
 	while True:
@@ -146,19 +150,23 @@ if __name__ == '__main__':
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
 	dispatcher.set_default_handler(print)
 
-	# MAX
-	server_port = 1337  # OSC-Receive (to DSS_Bridge)
-	client_port = 1338  # OSC-Send (from DSS_Bridge)
 	
-	# IPAD
+	# IPAD?
 
-	# Plugin
+	server_port_PLUGIN = 1337  # OSC-Receive (into DSS_Bridge)
+	server_PLUGIN = ThreadingOSCUDPServer(("192.168.42.68", server_port_PLUGIN), dispatcher)
+	server_thread_PLUGIN = threading.Thread(target=server_PLUGIN.serve_forever)
+	server_thread_PLUGIN.start()
 
-	server = ThreadingOSCUDPServer(("192.168.42.68", server_port), dispatcher)
-	server_thread = threading.Thread(target=server.serve_forever)
-	server_thread.start()
+	server_port_MAX = 1336  # OSC-Receive (into DSS_Bridge)
+	server_MAX = ThreadingOSCUDPServer(("192.168.42.68", server_port_MAX), dispatcher)
+	server_thread_MAX = threading.Thread(target=server_MAX.serve_forever)
+	server_thread_MAX.start()
 
-	client = SimpleUDPClient("192.168.42.68", client_port)  # Create client
+	client_port = 1338  # OSC-Send (out of DSS_Bridge)
+	client = SimpleUDPClient("192.168.42.255", client_port)  # .255 = Broadcast to 192.168.42.*
+	client._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+	
 	#--------------
 
 	# todo: think about what to do when we lose all or 1 or gain an additional one.
