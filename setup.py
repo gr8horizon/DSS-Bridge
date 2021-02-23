@@ -1,4 +1,6 @@
-# run python3 setup.py py2app
+# run:
+# cd ~/Documents/GitHub/DSS-Bridge
+# python3 setup.py py2app
 
 from setuptools import setup
 
