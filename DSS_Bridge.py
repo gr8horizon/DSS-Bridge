@@ -2,10 +2,10 @@
 #
 # Identify available DSS boards
 # Facilitate OSC command control
-# 12/23/20
 # P. Barton
 #
 # * makes the assumption that all /dev/cu.usbmodem* are DSS (Arduino Nano Every)
+# see setup.py for application building instructions
 
 import os, re, serial, time, glob
 import rumps
