@@ -29,12 +29,12 @@ class DSSBridgeApp(object):
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
-		self.DSS_button = rumps.MenuItem(title="-", callback=None)
+		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.app.menu = [self.DSS_button, self.find_DSS_button]
+		
 		self.DSS = {}  # todo: collapse this into SerialPorts
 		self.SerialPorts = {}  # serial.Serial objects (open ports)
-		# self.port_names = []
-		self.find_DSS()
+		# self.find_DSS() # now auto-checking this
 
 
 	def find_DSS(self, *etc):
@@ -68,11 +68,11 @@ class DSSBridgeApp(object):
 			for DSS_ID in DSS_IDs:
 				self.SerialPorts[DSS_ID] = serial.Serial(port=(self.DSS[DSS_ID]), baudrate=1000000, dsrdtr=True, timeout=1)
 		else:
-			self.DSS_button.title = '-'
+			self.DSS_button.title = 'No DSS Online'
 			self.app.icon = "Audium_Logo_Question.png"
-			self.DSS = []
-			rumps.alert(title="Audium DSS Bridge", message="No DSS Found", 
-				icon_path="Audium_Logo_Question.png")
+			self.DSS = {}
+			# rumps.alert(title="Audium DSS Bridge", message="No DSS Found", 
+				# icon_path="Audium_Logo_Question.png")
 
 	def run(self):
 		self.app.run()
@@ -103,7 +103,7 @@ def DSS_switcher_handler(address, *args):
 				s.readline()  # dummy read (todo: turn off echo in arduino?)
 			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
 				if arg == 0.0:
-					#       1234567812345678123456781234567812345678123456781234567812345678
+					#       1234567812345678123456781234567812345678123456781234567812345678 (64b)
 					spkr = '1000000000000000100000000000000010000000000000001000000000000000'
 				elif arg == 1.0:
 					spkr = '0100000000000000010000000000000001000000000000000100000000000000'
@@ -130,19 +130,14 @@ def DSS_switcher_handler(address, *args):
 
 def dev_watcher():
 	while True:
-		time.sleep(1)
-		port_names = glob.glob("/dev/cu.usbmodem*")
-		# print(set(port_names))
-		# print(set(DSSapp.DSS.values()))
-		if set(port_names) != set(DSSapp.DSS.values()):
-			print("Different DSS Ports!")
-			print(port_names)
-			if port_names: # poor checking... think about this
-				DSSapp.find_DSS()
+		time.sleep(1)  # too fast? maybe 5 s
+		if set(glob.glob("/dev/cu.usbmodem*")) != set(DSSapp.DSS.values()):
+			DSSapp.find_DSS()
 
 
 if __name__ == '__main__':
 	DSSapp = DSSBridgeApp()
+	# print(set(DSSapp.DSS.values()))
 
 	#---- OSC ----
 	dispatcher = Dispatcher()
@@ -170,8 +165,8 @@ if __name__ == '__main__':
 	#--------------
 
 	# todo: think about what to do when we lose all or 1 or gain an additional one.
-	# devwatcher_thread = threading.Thread(target=dev_watcher)
-	# devwatcher_thread.start()
+	devwatcher_thread = threading.Thread(target=dev_watcher)
+	devwatcher_thread.start()
 
 	DSSapp.run()
 
