@@ -77,6 +77,8 @@ class DSSBridgeApp(object):
 	def run(self):
 		self.app.run()
 
+def rotate(s, n):
+    return s[n:] + s[:n]
 
 def filter_handler(address, *args):
     print("OSC Message Received: " + f"{address}: {args}")
@@ -90,10 +92,35 @@ def DSS_handler(address, *args):
 		client.send_message("/DSS", "?")
 
 def DSS_switcher_handler(address, *args):
+	"""Handles OSC Messages: "/DSS/*"
+
+	"""
+	s4 = ('1' + '0' * 15) * 4
 	myDSS_ID = address[-1]
+	#print(myDSS_ID)
+	#print(len(args))
+	#print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
-	if len(args) > 0:
-		for arg in args:
+	if s == 'X':
+		if len(args) == 4:
+			if args[0] == 1:
+				s = '1'*6 + '0'*10
+			else:
+				s = '0'*16
+			if args[1] == 1:
+				s = s + '1'*6 + '0'*10
+			else:
+				s = s + '0'*16
+			# if args[2] == 1:
+			# 	s = s + 
+			# *** finish this
+
+	if len(args) == 6:
+		s6 = ''.join(str(arg) for arg in args)
+		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
+		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
+	elif len(args) == 1:
+		# for arg in args:
 			if arg == "reset":
 				s.write((myDSS_ID + '+\n').encode())
 				time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
@@ -102,31 +129,31 @@ def DSS_switcher_handler(address, *args):
 				s.write('-\n'.encode())
 				s.readline()  # dummy read (todo: turn off echo in arduino?)
 			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
-				if arg == 0.0:
-					#       1234567812345678123456781234567812345678123456781234567812345678 (64b)
-					spkr = '1000000000000000100000000000000010000000000000001000000000000000'
-				elif arg == 1.0:
-					spkr = '0100000000000000010000000000000001000000000000000100000000000000'
-				elif arg == 2.0:
-					spkr = '0010000000000000001000000000000000100000000000000010000000000000'
-				elif arg == 3.0:
-					spkr = '0001000000000000000100000000000000010000000000000001000000000000'
-				elif arg == 4.0:
-					spkr = '0000100000000000000010000000000000001000000000000000100000000000'
-				elif arg == 5.0:
-					spkr = '0000010000000000000001000000000000000100000000000000010000000000'
-
+				spkr = s4[-int(arg):] + s4[:-int(arg)] # rotate s4 by arg
 				s.write((myDSS_ID + spkr + "\n").encode())
-				# print("PLUGIN: " + myDSS_ID + spkr)
-			elif isinstance(arg, int):
-				s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+				#print("PLUGIN: " + myDSS_ID + spkr)
+			# elif isinstance(arg, int):
+			# 	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
 				# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
-				# no readline here (removed from Arduino code for speed)
 	else: # poll outputs if no args		
 		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
 		DSS_State = s.readline().decode().strip()
 		# print("   MAX: " + DSS_State)
 		client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
+
+def obj_handler(address, *args):
+	"""Handles OSC Messages: "/obj/*"
+	*** just who is sending this here?
+		DAW's go directly to MAX
+		iPAD and controllers go directly to DAW
+	"""
+	myObj_ID = address.split('/')[2]  # /obj/i
+	myAddress = address.split('/')[3]  # /obj/i/sub
+	if myAdress == "sub":
+		print('*')
+
+	print("OSC OBJ Message Received: " + f"{address.split('/')[2]}: {args}")
+	print(myAddress)
 
 def dev_watcher():
 	while True:
@@ -143,8 +170,8 @@ if __name__ == '__main__':
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
+	dispatcher.map("/obj/*", obj_handler) # sound object
 	dispatcher.set_default_handler(print)
-
 	
 	# IPAD?
 
