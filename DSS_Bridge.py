@@ -101,45 +101,48 @@ def DSS_switcher_handler(address, *args):
 	#print(len(args))
 	#print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
-	if s == 'X':
+	if myDSS_ID == 'X':
 		if len(args) == 4:
-			if args[0] == 1:
-				s = '1'*6 + '0'*10
-			else:
-				s = '0'*16
-			if args[1] == 1:
-				s = s + '1'*6 + '0'*10
-			else:
-				s = s + '0'*16
-			# if args[2] == 1:
-			# 	s = s + 
-			# *** finish this
+			spkr = [0] * 64
+			if args[0] == 1:  # Hanging
+				spkr[0:6] = [1] * 6
+			if args[1] == 1:  # Wall
+				spkr[16:22] = [1] * 6
+			if args[2] == 1:  # Floor
+				spkr[32:36] = [1] * 4
+				spkr[48:50] = [1] * 2
+			if args[3] == 1:  # Center
+				spkr[36:38] = [1] * 2
+				spkr[50:54] = [1] * 4
+			spkr = ''.join(str(x) for x in spkr)
+			s.write((myDSS_ID + spkr + "\n").encode())
 
 	if len(args) == 6:
 		s6 = ''.join(str(arg) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
 		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
 	elif len(args) == 1:
-		# for arg in args:
-			if arg == "reset":
-				s.write((myDSS_ID + '+\n').encode())
-				time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
-				s.readline()  # dummy read (todo: turn off echo in arduino?)
-			elif arg == "clear":
-				s.write('-\n'.encode())
-				s.readline()  # dummy read (todo: turn off echo in arduino?)
-			elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
-				spkr = s4[-int(arg):] + s4[:-int(arg)] # rotate s4 by arg
-				s.write((myDSS_ID + spkr + "\n").encode())
-				#print("PLUGIN: " + myDSS_ID + spkr)
-			# elif isinstance(arg, int):
-			# 	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
-				# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
-	else: # poll outputs if no args		
-		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
-		DSS_State = s.readline().decode().strip()
-		# print("   MAX: " + DSS_State)
-		client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
+		arg = args[0]
+		if arg == "reset":
+			s.write((myDSS_ID + '+\n').encode())
+			time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
+			s.readline()  # dummy read (todo: turn off echo in arduino?)
+		elif arg == "clear":
+			s.write('-\n'.encode())
+			s.readline()  # dummy read (todo: turn off echo in arduino?)
+		elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
+			spkr = s4[-int(arg):] + s4[:-int(arg)] # rotate s4 by arg
+			s.write((myDSS_ID + spkr + "\n").encode())
+			#print("PLUGIN: " + myDSS_ID + spkr)
+		# elif isinstance(arg, int):
+		# 	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+			# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
+	#else: # poll outputs if no args		
+	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
+	DSS_State = s.readline().decode().strip()
+	# print("   MAX: " + DSS_State)
+	client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
+
 
 def obj_handler(address, *args):
 	"""Handles OSC Messages: "/obj/*"
