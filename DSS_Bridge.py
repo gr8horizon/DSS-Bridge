@@ -118,9 +118,14 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + spkr + "\n").encode())
 
 	if len(args) == 6:
+		# binary state of 6 speakers in a quadrant: repeated 4 times
 		s6 = ''.join(str(arg) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
 		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
+	elif len(args) == 2:
+		# /DSS/A 16 0 --> A160
+		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
+
 	elif len(args) == 1:
 		arg = args[0]
 		if arg == "reset":
@@ -135,7 +140,7 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + spkr + "\n").encode())
 			#print("PLUGIN: " + myDSS_ID + spkr)
 		# elif isinstance(arg, int):
-		# 	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
+		#  	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
 			# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
 	#else: # poll outputs if no args		
 	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
