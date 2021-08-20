@@ -185,7 +185,8 @@ def dev_watcher():
 if __name__ == '__main__':
 	DSSapp = DSSBridgeApp()
 	# print(set(DSSapp.DSS.values()))
-
+	localip = socket.gethostbyname(socket.gethostname())
+	
 	#---- OSC ----
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
@@ -197,17 +198,17 @@ if __name__ == '__main__':
 	# IPAD?
 
 	server_port_PLUGIN = 1337  # OSC-Receive (into DSS_Bridge)
-	server_PLUGIN = ThreadingOSCUDPServer(("192.168.42.68", server_port_PLUGIN), dispatcher)
+	server_PLUGIN = ThreadingOSCUDPServer((localip, server_port_PLUGIN), dispatcher)
 	server_thread_PLUGIN = threading.Thread(target=server_PLUGIN.serve_forever)
 	server_thread_PLUGIN.start()
 
 	server_port_MAX = 1336  # OSC-Receive (into DSS_Bridge)
-	server_MAX = ThreadingOSCUDPServer(("192.168.42.68", server_port_MAX), dispatcher)
+	server_MAX = ThreadingOSCUDPServer((localip, server_port_MAX), dispatcher)
 	server_thread_MAX = threading.Thread(target=server_MAX.serve_forever)
 	server_thread_MAX.start()
 
 	server_port_QLAB = 1335  # OSC-Receive (into DSS_Bridge)
-	server_QLAB = ThreadingOSCUDPServer(("192.168.42.68", server_port_QLAB), dispatcher)
+	server_QLAB = ThreadingOSCUDPServer((localip, server_port_QLAB), dispatcher)
 	server_thread_QLAB = threading.Thread(target=server_QLAB.serve_forever)
 	server_thread_QLAB.start()
 
