@@ -121,7 +121,7 @@ def DSS_switcher_handler(address, *args):
 		# binary state of 6 speakers in a quadrant: repeated 4 times
 		s6 = ''.join(str(arg) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
-		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
+		#print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
 	elif len(args) == 2:
 		# /DSS/A 16 0 --> A160
 		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 	DSSapp = DSSBridgeApp()
 	# print(set(DSSapp.DSS.values()))
 	localip = socket.gethostbyname(socket.gethostname())
-	
+
 	#---- OSC ----
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
