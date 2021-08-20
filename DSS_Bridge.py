@@ -51,8 +51,8 @@ class DSSBridgeApp(object):
 			try:
 				s = serial.Serial(port=(port_name), baudrate=1000000, dsrdtr=True, timeout=1)
 			except serial.SerialException: 
-				rumps.alert(title="Audium DSS Bridge", message="Could not open Serial Port:\n\n" + port_name, 
-					icon_path="Audium_Logo_Question.png")
+				#rumps.alert(title="Audium DSS Bridge", message="Could not open Serial Port:\n\n" + port_name, 
+				#	icon_path="Audium_Logo_Question.png")
 				pass
 				continue 
 			time.sleep(0.2)
@@ -163,6 +163,18 @@ def obj_handler(address, *args):
 	print("OSC OBJ Message Received: " + f"{address.split('/')[2]}: {args}")
 	print(myAddress)
 
+
+def ALS_handler(address, *args):
+	"""Handles OSC Messages: "/ALS/level"
+	"""
+	# *** check if L exists first
+	s = DSSapp.SerialPorts['L']
+	#f address.split('/')[2]
+	# lvl = int(args[0] * 255.0)
+	s.write(("!" + '%(lvl)03d' % {"lvl": args[0]}  + "\n").encode())
+	print("OSC ALS Message Received: " + str(args[0]))
+
+
 def dev_watcher():
 	while True:
 		time.sleep(1)  # too fast? maybe 5 s
@@ -178,6 +190,7 @@ if __name__ == '__main__':
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
+	dispatcher.map("/ALS/level", ALS_handler) # Audium Lighting System
 	dispatcher.map("/obj/*", obj_handler) # sound object
 	dispatcher.set_default_handler(print)
 	
@@ -192,6 +205,11 @@ if __name__ == '__main__':
 	server_MAX = ThreadingOSCUDPServer(("192.168.42.68", server_port_MAX), dispatcher)
 	server_thread_MAX = threading.Thread(target=server_MAX.serve_forever)
 	server_thread_MAX.start()
+
+	server_port_QLAB = 1335  # OSC-Receive (into DSS_Bridge)
+	server_QLAB = ThreadingOSCUDPServer(("192.168.42.68", server_port_QLAB), dispatcher)
+	server_thread_QLAB = threading.Thread(target=server_QLAB.serve_forever)
+	server_thread_QLAB.start()
 
 	client_port = 1338  # OSC-Send (out of DSS_Bridge)
 	client = SimpleUDPClient("192.168.42.255", client_port)  # .255 = Broadcast to 192.168.42.*
