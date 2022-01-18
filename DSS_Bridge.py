@@ -104,7 +104,8 @@ def DSS_switcher_handler(address, *args):
 	"""Handles OSC Messages: "/DSS/*"
 
 	"""
-	DSSapp.log.default_text += "DSS/*: " + address + ", {}".format(args) + "\n"
+	# TODO: uncomment when we're comfortable with logging...
+	# DSSapp.log.default_text += "DSS/*: " + address + ", {}".format(args) + "\n"
 
 	s4 = ('1' + '0' * 15) * 4
 	myDSS_ID = address[-1]
