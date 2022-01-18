@@ -28,14 +28,21 @@ class DSSBridgeApp(object):
 		self.app = rumps.App("DSS Bridge")
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
+		self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
-		self.app.menu = [self.DSS_button, self.find_DSS_button]
+		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
+		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button]
+
 		
 		self.DSS = {}  # todo: collapse this into SerialPorts
 		self.SerialPorts = {}  # serial.Serial objects (open ports)
 		# self.find_DSS() # now auto-checking this
 
+	def show_log(self, *etc):
+		log_response = self.log.run()
+		if log_response.clicked == 0:  # cancel button
+			self.log.default_text = ""
 
 	def find_DSS(self, *etc):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
@@ -60,6 +67,8 @@ class DSSBridgeApp(object):
 			DSS_ID = s.readline().decode()  # contains e.g. "A\r\n"
 			DSS_IDs.append(DSS_ID[0])
 			s.close()
+			#self.log.default_text += port_name + "\n"
+			# print('opened: ' + port_name)
 
 		if DSS_IDs:
 			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
@@ -95,6 +104,8 @@ def DSS_switcher_handler(address, *args):
 	"""Handles OSC Messages: "/DSS/*"
 
 	"""
+	DSSapp.log.default_text += "DSS/*: " + address + ", {}".format(args) + "\n"
+
 	s4 = ('1' + '0' * 15) * 4
 	myDSS_ID = address[-1]
 	#print(myDSS_ID)
@@ -193,7 +204,7 @@ if __name__ == '__main__':
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
 	dispatcher.map("/ALS/level", ALS_handler) # Audium Lighting System
-	dispatcher.map("/obj/*", obj_handler) # sound object
+	# dispatcher.map("/obj/*", obj_handler) # sound object
 	dispatcher.set_default_handler(print)
 	
 	# IPAD?
