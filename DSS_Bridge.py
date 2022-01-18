@@ -40,7 +40,7 @@ class DSSBridgeApp(object):
 	def find_DSS(self, *etc):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
-		port_names = glob.glob("/dev/cu.usbmodem*")
+		port_names = glob.glob("/dev/cu.usbmodem411*")  # added 411 to avoid finding Metro (101...)
 		# if set(possible_port_names) != set(self.port_names):
 		# 	self.port_names = possible_port_names
 
@@ -178,7 +178,8 @@ def ALS_handler(address, *args):
 def dev_watcher():
 	while True:
 		time.sleep(1)  # too fast? maybe 5 s
-		if set(glob.glob("/dev/cu.usbmodem*")) != set(DSSapp.DSS.values()):
+		if set(glob.glob("/dev/cu.usbmodem411*")) != set(DSSapp.DSS.values()):
+			print("devices different... attempting to re-find")
 			DSSapp.find_DSS()
 
 
