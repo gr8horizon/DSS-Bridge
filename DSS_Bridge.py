@@ -19,17 +19,13 @@ from pythonosc.dispatcher import Dispatcher
 import threading
 
 
-# todo: add listener to /dev for ttyusbmodem changes and store serial numbers of arduinos. lightweight polling?
-
-
-
 class DSSBridgeApp(object):
 	def __init__(self):
 		self.app = rumps.App("DSS Bridge")
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
 		self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
-		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
+		self.find_DSS_button = rumps.MenuItem(title="Find DSS... (not auto-watching)", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
 		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button]
@@ -37,7 +33,6 @@ class DSSBridgeApp(object):
 		
 		self.DSS = {}  # todo: collapse this into SerialPorts
 		self.SerialPorts = {}  # serial.Serial objects (open ports)
-		# self.find_DSS() # now auto-checking this
 
 	def show_log(self, *etc):
 		log_response = self.log.run()
@@ -47,7 +42,7 @@ class DSSBridgeApp(object):
 	def find_DSS(self, *etc):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
-		port_names = glob.glob("/dev/cu.usbmodem411*")  # added 411 to avoid finding Metro (101...)
+		port_names = glob.glob("/dev/cu.usbmodem*")  
 		# if set(possible_port_names) != set(self.port_names):
 		# 	self.port_names = possible_port_names
 
@@ -65,10 +60,15 @@ class DSSBridgeApp(object):
 			time.sleep(0.2)
 			s.write(b'?\n')  # request DSS_ID from this port
 			DSS_ID = s.readline().decode()  # contains e.g. "A\r\n"
+			if not DSS_ID:
+				s.close()
+				print('ignored: ' + port_name)
+				continue
+			print(DSS_ID[0])
 			DSS_IDs.append(DSS_ID[0])
 			s.close()
 			#self.log.default_text += port_name + "\n"
-			# print('opened: ' + port_name)
+			print('opened: ' + port_name)
 
 		if DSS_IDs:
 			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
@@ -104,7 +104,7 @@ def DSS_switcher_handler(address, *args):
 	"""Handles OSC Messages: "/DSS/*"
 
 	"""
-	# TODO: uncomment when we're comfortable with logging...
+	# TODO: uncomment when we're comfortable with logging... (e.g. dual Max Metro 100 fails)
 	# DSSapp.log.default_text += "DSS/*: " + address + ", {}".format(args) + "\n"
 
 	s4 = ('1' + '0' * 15) * 4
@@ -188,15 +188,19 @@ def ALS_handler(address, *args):
 
 
 def dev_watcher():
-	while True:
+	while True: 
 		time.sleep(1)  # too fast? maybe 5 s
-		if set(glob.glob("/dev/cu.usbmodem411*")) != set(DSSapp.DSS.values()):
+		dev_names = glob.glob("/dev/cu.usbmodem*")
+		#print(set(dev_names).difference(set(DSSapp.DSS.values())))
+		if set(dev_names) != set(DSSapp.DSS.values()):
 			print("devices different... attempting to re-find")
 			DSSapp.find_DSS()
 
 
 if __name__ == '__main__':
 	DSSapp = DSSBridgeApp()
+	DSSapp.find_DSS()
+
 	# print(set(DSSapp.DSS.values()))
 	localip = socket.gethostbyname(socket.gethostname())
 
@@ -232,9 +236,10 @@ if __name__ == '__main__':
 	#--------------
 
 	# todo: think about what to do when we lose all or 1 or gain an additional one.
-	devwatcher_thread = threading.Thread(target=dev_watcher)
-	devwatcher_thread.start()
+	# disabled until we can figure out how to deal with Metro and changing /dev names
+	#devwatcher_thread = threading.Thread(target=dev_watcher)
+	#devwatcher_thread.start()
 
 	DSSapp.run()
-
+	
 
