@@ -31,7 +31,8 @@ class DSSBridgeApp(object):
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
 		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button]
-
+		self.lastOSCaddress = None
+		self.lastOSCargs = []
 		
 		self.DSS = {}  # todo: collapse this into SerialPorts
 		self.SerialPorts = {}  # serial.Serial objects (open ports)
@@ -108,6 +109,11 @@ def DSS_switcher_handler(address, *args):
 	"""
 	# TODO: uncomment when we're comfortable with logging... (e.g. dual Max Metro 100 fails)
 	# DSSapp.log.default_text += "DSS/*: " + address + ", {}".format(args) + "\n"
+	# if address == DSSapp.lastOSCaddress and set(args) == set(DSSapp.lastOSCargs):
+		# return
+
+	DSSapp.lastOSCaddress = address
+	DSSapp.lastOSCargs = args
 
 	s4 = ('1' + '0' * 15) * 4
 	myDSS_ID = address[-1]
