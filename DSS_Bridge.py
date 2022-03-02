@@ -206,11 +206,16 @@ def dev_watcher():
 
 
 if __name__ == '__main__':
+	# localip = socket.gethostbyname(socket.gethostname())
+	# print(localip)
+	# print(socket.gethostname())
+	localip = "192.168.42.110"
+
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
 
 	# print(set(DSSapp.DSS.values()))
-	localip = socket.gethostbyname(socket.gethostname())
+	
 
 	#---- OSC ----
 	dispatcher = Dispatcher()
