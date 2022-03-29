@@ -209,7 +209,9 @@ if __name__ == '__main__':
 	# localip = socket.gethostbyname(socket.gethostname())
 	# print(localip)
 	# print(socket.gethostname())
-	localip = "192.168.42.111"
+	localip = "192.168.42.111" # For Laptop
+	# localip = "192.168.42.110" # For Desktop
+
 
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
