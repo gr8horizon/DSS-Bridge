@@ -7,7 +7,8 @@
 # * makes the assumption that all /dev/cu.usbmodem* are DSS (Arduino Nano Every)
 # see setup.py for application building instructions
 #
-# requires: python3.9, rumps, pyserial, python-osc
+# requires: python3.9 (download from python.org)
+#   pip3 install rumps pyserial python-osc
 
 import os, re, serial, time, glob
 import rumps
