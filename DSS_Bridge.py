@@ -118,31 +118,33 @@ def DSS_switcher_handler(address, *args):
 
 	s4 = ('1' + '0' * 15) * 4
 	myDSS_ID = address[-1]
-	#print(myDSS_ID)
-	#print(len(args))
-	#print(args)
+	# print(myDSS_ID)
+	# print(len(args))
+	# print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
 	if myDSS_ID == 'X':
+		# print(arg for arg in args)
 		if len(args) == 4:
 			spkr = [0] * 64
-			if args[0] == 1:  # Hanging
+			if int(args[0]) == 1:  # Hanging
 				spkr[0:6] = [1] * 6
-			if args[1] == 1:  # Wall
+			if int(args[1]) == 1:  # Wall
 				spkr[16:22] = [1] * 6
-			if args[2] == 1:  # Floor
+			if int(args[2]) == 1:  # Floor
 				spkr[32:36] = [1] * 4
 				spkr[48:50] = [1] * 2
-			if args[3] == 1:  # Center
+			if int(args[3]) == 1:  # Center
 				spkr[36:38] = [1] * 2
 				spkr[50:54] = [1] * 4
 			spkr = ''.join(str(x) for x in spkr)
 			s.write((myDSS_ID + spkr + "\n").encode())
+			# print((myDSS_ID + spkr + "\n"))
 
 	if len(args) == 6:
 		# binary state of 6 speakers in a quadrant: repeated 4 times
-		s6 = ''.join(str(arg) for arg in args)
+		s6 = ''.join(str(int(arg)) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
-		#print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
+		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
 	elif len(args) == 2:
 		# /DSS/A 16 0 --> A160
 		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
@@ -207,10 +209,11 @@ def dev_watcher():
 
 
 if __name__ == '__main__':
-	# localip = socket.gethostbyname(socket.gethostname())
-	# print(localip)
-	# print(socket.gethostname())
-	localip = "192.168.42.110"
+	localip = socket.gethostbyname(socket.gethostname())
+	print(localip)
+	print(socket.gethostname())
+	# localip = "192.168.42.90"
+	# localip = "127.0.0.1"
 
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
