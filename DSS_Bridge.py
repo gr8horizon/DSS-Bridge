@@ -28,7 +28,7 @@ class DSSBridgeApp(object):
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
 		self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
-		self.find_DSS_button = rumps.MenuItem(title="Find DSS... (not auto-watching)", callback=self.find_DSS)
+		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
 		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button]
@@ -209,7 +209,9 @@ def dev_watcher():
 
 
 if __name__ == '__main__':
+	# ONLY WORKS reliably if you have one internet interface!!
 	localip = socket.gethostbyname(socket.gethostname())
+
 	print(localip)
 	print(socket.gethostname())
 	# localip = "192.168.42.90"
@@ -256,8 +258,9 @@ if __name__ == '__main__':
 
 	# todo: think about what to do when we lose all or 1 or gain an additional one.
 	# disabled until we can figure out how to deal with Metro and changing /dev names
-	#devwatcher_thread = threading.Thread(target=dev_watcher)
-	#devwatcher_thread.start()
+	# enabled again 5/6/22
+	devwatcher_thread = threading.Thread(target=dev_watcher)
+	devwatcher_thread.start()
 
 	DSSapp.run()
 	
