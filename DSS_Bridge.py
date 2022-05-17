@@ -209,26 +209,28 @@ def dev_watcher():
 
 
 if __name__ == '__main__':
-	# ONLY WORKS reliably if you have one internet interface!!
-	localip = socket.gethostbyname(socket.gethostname())
 
+	host_ipaddresses = {
+		'AudiumsacStudio' : '192.168.42.90',
+		'Audiums-Mini' : '192.168.42.100',
+		'Stans-MBP' : '192.168.42.67'
+		}
+	hostname = socket.gethostname()
+	localip = host_ipaddresses[hostname] # localip = "127.0.0.1" fails (known issue)
+	print(hostname)
 	print(localip)
-	print(socket.gethostname())
-	# localip = "192.168.42.90"
-	# localip = "127.0.0.1"
 
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
 
 	# print(set(DSSapp.DSS.values()))
 	
-
 	#---- OSC ----
 	dispatcher = Dispatcher()
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
 	dispatcher.map("/ALS/level", ALS_handler) # Audium Lighting System
-	# dispatcher.map("/obj/*", obj_handler) # sound object
+	dispatcher.map("/obj/*", obj_handler) # sound object
 	dispatcher.set_default_handler(print)
 	
 	# IPAD?
