@@ -138,7 +138,7 @@ def DSS_switcher_handler(address, *args):
 				spkr[50:54] = [1] * 4
 			spkr = ''.join(str(x) for x in spkr)
 			s.write((myDSS_ID + spkr + "\n").encode())
-			# print((myDSS_ID + spkr + "\n"))
+			print((myDSS_ID + spkr + "\n"))
 
 	if len(args) == 6:
 		# binary state of 6 speakers in a quadrant: repeated 4 times
@@ -148,6 +148,7 @@ def DSS_switcher_handler(address, *args):
 	elif len(args) == 2:
 		# /DSS/A 16 0 --> A160
 		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
+		print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
 
 	elif len(args) == 1:
 		arg = args[0]
