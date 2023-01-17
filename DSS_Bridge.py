@@ -156,6 +156,7 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + '+\n').encode())
 			time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
 			s.readline()  # dummy read (todo: turn off echo in arduino?)
+			print((myDSS_ID + " reset\n"))
 		elif arg == "clear":
 			s.write('-\n'.encode())
 			s.readline()  # dummy read (todo: turn off echo in arduino?)
@@ -199,7 +200,7 @@ def ALS_handler(address, *args):
 	print("OSC ALS Message Received: " + str(args[0]))
 
 
-def dev_watcher():
+# def dev_watcher():
 	while True: 
 		time.sleep(1)  # too fast? maybe 5 s
 		dev_names = glob.glob("/dev/cu.usbmodem*")
