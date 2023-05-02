@@ -194,10 +194,17 @@ def ALS_handler(address, *args):
 	"""
 	# *** check if L exists first
 	s = DSSapp.SerialPorts['L']
-	#f address.split('/')[2]
-	# lvl = int(args[0] * 255.0)
-	s.write(("!" + '%(lvl)03d' % {"lvl": args[0]}  + "\n").encode())
-	print("OSC ALS Message Received: " + str(args[0]))
+	s.write((f'!{args[0]:03d}\n').encode())
+	print("OSC ALS Level Message Received: " + str(args[0]))
+	#client.send_message("/5/battery2", (args[0] - 30) / 225.0)
+
+# TODO: only need one ALS_Handler
+def ALS_fade_handler(address, *args):
+	"""Handles OSC Messages: "/ALS/fade"
+	"""
+	s = DSSapp.SerialPorts['L']
+	s.write((f'{args[0]:+03d}\n').encode())
+	print(f'OSC ALS Fade Message Received: {args[0]:+03d}')
 
 
 def dev_watcher():
@@ -232,6 +239,7 @@ if __name__ == '__main__':
 	dispatcher.map("/DSS", DSS_handler)
 	dispatcher.map("/DSS/*", DSS_switcher_handler)
 	dispatcher.map("/ALS/level", ALS_handler) # Audium Lighting System
+	dispatcher.map("/ALS/fade", ALS_fade_handler) # Audium Lighting System
 	dispatcher.map("/obj/*", obj_handler) # sound object
 	dispatcher.set_default_handler(print)
 	
