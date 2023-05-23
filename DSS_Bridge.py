@@ -140,6 +140,23 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + spkr + "\n").encode())
 			print((myDSS_ID + spkr + "\n"))
 
+		if len(args) == 10: # 6 speakers first, then 4 groups
+			spkr = [0] * 64
+			print(args)
+			if int(args[6]) == 1:  # Hanging
+				spkr[0:6] = args[0:6]
+			if int(args[7]) == 1:  # Wall
+				spkr[16:22] = args[0:6]
+			if int(args[8]) == 1:  # Floor
+				spkr[32:36] = args[0:4]   # TODO: Is this the right mapping(?)
+				spkr[48:50] = args[4:6]
+			if int(args[9]) == 1:  # Center
+				spkr[36:38] = args[4:6]
+				spkr[50:54] = args[0:4]
+			spkr = ''.join(str(x) for x in spkr)
+			s.write((myDSS_ID + spkr + "\n").encode())
+			print((myDSS_ID + spkr + "\n"))
+
 	if len(args) == 6:
 		# binary state of 6 speakers in a quadrant: repeated 4 times
 		s6 = ''.join(str(int(arg)) for arg in args)
