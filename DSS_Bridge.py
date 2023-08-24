@@ -113,6 +113,8 @@ def DSS_switcher_handler(address, *args):
 	# if address == DSSapp.lastOSCaddress and set(args) == set(DSSapp.lastOSCargs):
 		# return
 
+	z_map = [ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, -1,  0,  7,  1, -1, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18]
+
 	DSSapp.lastOSCaddress = address
 	DSSapp.lastOSCargs = args
 
@@ -162,10 +164,16 @@ def DSS_switcher_handler(address, *args):
 		s6 = ''.join(str(int(arg)) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
 		print((myDSS_ID + (s6 + '0' * 10) * 4 + "\n"))
+	
 	elif len(args) == 2:
 		# /DSS/A 16 0 --> A160
-		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
-		print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
+		# z_map = [4,31,14,9,3,11,15,16,36,13,12,10,6,?,1,8,2,x,35,34,30,29,20,21,25,17,18,28,24,26,27,23,22,33,32,19] # 7 missing, 5(from H3?)   [base-1!!]
+		if myDSS_ID == 'Z':
+			s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
+			print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+		else:
+			s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
+			print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
 
 	elif len(args) == 1:
 		arg = args[0]
