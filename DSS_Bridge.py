@@ -8,7 +8,7 @@
 # see setup.py for application building instructions
 #
 # requires: python3.9 (download from python.org)
-#   pip3 install rumps pyserial python-osc
+#   pip3 install rumps pyserial python-osc remi
 
 import os, re, serial, time, glob
 import rumps
@@ -20,7 +20,20 @@ from pythonosc.udp_client import SimpleUDPClient
 from pythonosc.osc_server import ThreadingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import threading
+# import remi
 
+# class WebApp(remi.App):
+# 	def __init__(self, *args):
+# 		super(WebApp, self).__init__(*args)
+
+# 	def main(self):
+# 		verticalContainer = remi.gui.Container(width=540, margin='0px auto', style={'display': 'block', 'overflow': 'hidden'})
+# 		self.lbl = remi.gui.Label('Welcome to DSS-Web!', width=200, height=30, margin='10px')
+# 		verticalContainer.append([self.lbl])
+# 		return verticalContainer
+
+# 	# def set_lbl(value):
+# 		# change the value?
 
 class DSSBridgeApp(object):
 	def __init__(self):
@@ -31,12 +44,30 @@ class DSSBridgeApp(object):
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
-		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button]
+		self.reset_button = rumps.MenuItem(title="Reset DSS", callback=self.reset_DSS)
+		self.state_button = rumps.MenuItem(title="State", callback=self.show_state)
+		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button, self.reset_button, self.state_button]
 		self.lastOSCaddress = None
 		self.lastOSCargs = []
 		
 		self.DSS = {}  # todo: collapse this into SerialPorts
 		self.SerialPorts = {}  # serial.Serial objects (open ports)
+
+
+	def show_state(self, *etc):
+
+		for id in sorted(self.DSS):
+			s = DSSapp.SerialPorts[id]
+			s.write((id + "\n").encode())  # request all output states from DSS
+			print(f'{id}: {s.readline().decode().strip()}')
+
+	def reset_DSS(self, *etc):
+		for id in self.DSS:
+			s = DSSapp.SerialPorts[id]
+			s.write((id + '+\n').encode())
+			time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
+			s.readline()  # dummy read (todo: turn off echo in arduino?)
+			print(id + ' reset')
 
 	def show_log(self, *etc):
 		log_response = self.log.run()
@@ -97,12 +128,25 @@ def filter_handler(address, *args):
     print("OSC Message Received: " + f"{address}: {args}")
 
 def DSS_handler(address, *args):
-	DSSapp.find_DSS()
-	time.sleep(0.5)
-	if DSSapp.DSS:
-		client.send_message("/DSS", sorted(DSSapp.DSS.keys())) 
-	else:
-		client.send_message("/DSS", "?")
+	# I want to send '/DSS ALV BH XHC'
+
+	bank_A_spkr_ids = ['L','V','U','R','D','E']
+	bank_B_spkr_ids = ['W','P','H','T','C','J']
+
+	for spkr_bank in args:
+		if spkr_bank[0] == 'A':
+			for spkr in spkr_bank[0][1:]:
+				# switch A - find match in list of speakers
+				print(spkr)
+				
+
+
+	# DSSapp.find_DSS()
+	# time.sleep(0.5)
+	# if DSSapp.DSS:
+	# 	client.send_message("/DSS", sorted(DSSapp.DSS.keys())) 
+	# else:
+	# 	client.send_message("/DSS", "?")
 
 def DSS_switcher_handler(address, *args):
 	"""Handles OSC Messages: "/DSS/*"
@@ -185,7 +229,7 @@ def DSS_switcher_handler(address, *args):
 		elif arg == "clear":
 			s.write('-\n'.encode())
 			s.readline()  # dummy read (todo: turn off echo in arduino?)
-		elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDJ, WTPHCE
+		elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDE, WTPHCJ
 			spkr = s4[-int(arg):] + s4[:-int(arg)] # rotate s4 by arg
 			s.write((myDSS_ID + spkr + "\n").encode())
 			#print("PLUGIN: " + myDSS_ID + spkr)
@@ -298,6 +342,8 @@ if __name__ == '__main__':
 	# enabled again 5/6/22
 	devwatcher_thread = threading.Thread(target=dev_watcher)
 	devwatcher_thread.start()
+
+	# remi.start(WebApp, debug=True, address='0.0.0.0', port=8081, start_browser=True, multiple_instance=True)
 
 	DSSapp.run()
 	
