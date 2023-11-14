@@ -11,6 +11,7 @@
 #   pip3 install rumps pyserial python-osc remi
 
 import os, re, serial, time, glob
+import numpy as np
 import rumps
 
 rumps.debug_mode(False)
@@ -20,17 +21,21 @@ from pythonosc.udp_client import SimpleUDPClient
 from pythonosc.osc_server import ThreadingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import threading
-# import remi
 
-# class WebApp(remi.App):
+import remi
+
+# class WebApp(remi.App, DSSapp):
 # 	def __init__(self, *args):
 # 		super(WebApp, self).__init__(*args)
 
 # 	def main(self):
+# 		# DSSapp.find_DSS()
 # 		verticalContainer = remi.gui.Container(width=540, margin='0px auto', style={'display': 'block', 'overflow': 'hidden'})
-# 		self.lbl = remi.gui.Label('Welcome to DSS-Web!', width=200, height=30, margin='10px')
+# 		self.lbl = remi.gui.Label(DSSApp.show_state(), width=200, height=30, margin='10px')
 # 		verticalContainer.append([self.lbl])
 # 		return verticalContainer
+
+# 		# DSSapp.find_DSS()
 
 # 	# def set_lbl(value):
 # 		# change the value?
@@ -40,13 +45,13 @@ class DSSBridgeApp(object):
 		self.app = rumps.App("DSS Bridge")
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
-		self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
+		# self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
 		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
 		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
 		self.reset_button = rumps.MenuItem(title="Reset DSS", callback=self.reset_DSS)
 		self.state_button = rumps.MenuItem(title="State", callback=self.show_state)
-		self.app.menu = [self.DSS_button, self.find_DSS_button, self.log_button, self.reset_button, self.state_button]
+		self.app.menu = [self.DSS_button, self.find_DSS_button, self.reset_button, self.state_button]
 		self.lastOSCaddress = None
 		self.lastOSCargs = []
 		
@@ -59,7 +64,25 @@ class DSSBridgeApp(object):
 		for id in sorted(self.DSS):
 			s = DSSapp.SerialPorts[id]
 			s.write((id + "\n").encode())  # request all output states from DSS
-			print(f'{id}: {s.readline().decode().strip()}')
+			state_bin = s.readline().decode().strip()
+			state_bin_bool = [a == '1' for a in state_bin]
+			lut_A = np.array([i for i in 'LVURDE--------- LVURDE--------- LVURDE--------- LVURDE----------'])
+			lut_B = np.array([i for i in 'WPHTCJ--------- WPHTCJ--------- WPHTCJ--------- WPHTCJ----------'])
+			state_str = f'{id}: {state_bin}'
+			if id == 'A':
+				# lut_A[~state_bin_bool] = '-'
+				lut_A[np.invert(state_bin_bool)] = ' '
+				print(f'A: {"".join(lut_A)}')
+				# print(f'A: {"".join(state_bin)}')
+				# print(f'A: {"".join(lut_A[state_bin_bool])}')
+			if id == 'B':
+				lut_B[np.invert(state_bin_bool)] = ' '
+				print(f'B: {"".join(lut_B)}')
+				# print(f'B: {"".join(lut_B[state_bin_bool])}')
+
+			# print(state_str)
+		print()
+		return state_str
 
 	def reset_DSS(self, *etc):
 		for id in self.DSS:
@@ -99,11 +122,11 @@ class DSSBridgeApp(object):
 				s.close()
 				print('ignored: ' + port_name)
 				continue
-			print(DSS_ID[0])
+			# print(DSS_ID[0])
 			DSS_IDs.append(DSS_ID[0])
 			s.close()
 			#self.log.default_text += port_name + "\n"
-			print('opened: ' + port_name)
+			print(f'{DSS_ID[0]} found at {port_name}')
 
 		if DSS_IDs:
 			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
@@ -295,8 +318,8 @@ if __name__ == '__main__':
 		}
 	hostname = socket.gethostname()
 	localip = host_ipaddresses[hostname] # localip = "127.0.0.1" fails (known issue)
-	print(hostname)
-	print(localip)
+	# print(hostname)
+	print(f'Local IP: {localip}')
 
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
@@ -343,6 +366,7 @@ if __name__ == '__main__':
 	devwatcher_thread = threading.Thread(target=dev_watcher)
 	devwatcher_thread.start()
 
+	# print(DSSapp.show_state())
 	# remi.start(WebApp, debug=True, address='0.0.0.0', port=8081, start_browser=True, multiple_instance=True)
 
 	DSSapp.run()
