@@ -22,9 +22,9 @@ from pythonosc.osc_server import ThreadingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import threading
 
-import remi
+# import remi
 
-# class WebApp(remi.App, DSSapp):
+# class WebApp(remi.App):
 # 	def __init__(self, *args):
 # 		super(WebApp, self).__init__(*args)
 
@@ -308,14 +308,19 @@ def dev_watcher():
 			print("devices different... attempting to re-find")
 			DSSapp.find_DSS()
 
+def remi_start():
+	remi.start(WebApp, debug=True, address='127.0.0.1', port=8081, start_browser=True, multiple_instance=True)
 
 if __name__ == '__main__':
 
 	host_ipaddresses = {
+		'Audiums-Mac-Studio.local' : '192.168.42.90',
+		'Audiums-Mac-Studio' : '192.168.42.90',
 		'AudiumsacStudio' : '192.168.42.90',
 		'Audiums-Mini' : '192.168.42.100',
 		'Stans-MBP' : '192.168.42.67'
 		}
+	try_count = 0
 	hostname = socket.gethostname()
 	localip = host_ipaddresses[hostname] # localip = "127.0.0.1" fails (known issue)
 	# print(hostname)
@@ -367,7 +372,9 @@ if __name__ == '__main__':
 	devwatcher_thread.start()
 
 	# print(DSSapp.show_state())
-	# remi.start(WebApp, debug=True, address='0.0.0.0', port=8081, start_browser=True, multiple_instance=True)
+	# remi_thread = threading.Thread(target=remi_start)
+	# remi_thread.start()
+	# remi.start(WebApp, debug=True, address='0.0.0.0', port=8082, start_browser=True, multiple_instance=True)
 
 	DSSapp.run()
 	
