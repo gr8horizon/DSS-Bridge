@@ -100,7 +100,7 @@ class DSSBridgeApp(object):
 	def find_DSS(self, *etc):
 		# todo: keep track of: dev, DSS_ID, state, time queried, last request
 		DSS_IDs = []
-		port_names = glob.glob("/dev/cu.usbmodem*")  
+		port_names = glob.glob("/dev/cu.usbmodem2111*")  # don't want gloves (so 2111)
 		# if set(possible_port_names) != set(self.port_names):
 		# 	self.port_names = possible_port_names
 
@@ -302,7 +302,7 @@ def ALS_fade_handler(address, *args):
 def dev_watcher():
 	while True: 
 		time.sleep(1)  # too fast? maybe 5 s
-		dev_names = glob.glob("/dev/cu.usbmodem*")
+		dev_names = glob.glob("/dev/cu.usbmodem2111*")  # gloves are 123456799992
 		#print(set(dev_names).difference(set(DSSapp.DSS.values())))
 		if set(dev_names) != set(DSSapp.DSS.values()):
 			print("devices different... attempting to re-find")
