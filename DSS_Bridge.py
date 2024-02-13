@@ -61,6 +61,7 @@ class DSSBridgeApp(object):
 
 	def show_state(self, *etc):
 
+		# TODO: Add X
 		for id in sorted(self.DSS):
 			s = DSSapp.SerialPorts[id]
 			s.write((id + "\n").encode())  # request all output states from DSS
@@ -91,6 +92,7 @@ class DSSBridgeApp(object):
 			time.sleep(0.2) # fixed 0.1 s Arduino delay after EEPROM readout
 			s.readline()  # dummy read (todo: turn off echo in arduino?)
 			print(id + ' reset')
+		self.show_state()
 
 	def show_log(self, *etc):
 		log_response = self.log.run()
@@ -193,6 +195,8 @@ def DSS_switcher_handler(address, *args):
 	s = DSSapp.SerialPorts[myDSS_ID]
 	if myDSS_ID == 'X':
 		# print(arg for arg in args)
+		# TODO: add OSC msgs for "/DSS/X/Wall" e.g.
+		# /DSS/X 0 1 1 0 --> turn on/off all 6 speakers in [Wall, Floor]
 		if len(args) == 4:
 			spkr = [0] * 64
 			if int(args[0]) == 1:  # Hanging
@@ -209,6 +213,7 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + spkr + "\n").encode())
 			print((myDSS_ID + spkr + "\n"))
 
+		# /DSS/X 0 1 1 0 1 1  0 0 1 1 --> assign this state: [0 1 1 0 1 1] to these groups [0 0 1 1] = [Floor, Center]
 		if len(args) == 10: # 6 speakers first, then 4 groups
 			spkr = [0] * 64
 			print(args)
@@ -252,6 +257,7 @@ def DSS_switcher_handler(address, *args):
 		elif arg == "clear":
 			s.write('-\n'.encode())
 			s.readline()  # dummy read (todo: turn off echo in arduino?)
+			print(myDSS_ID + ' cleared\n')
 		elif isinstance(arg, float): # incoming float 0.0:5.0 for LVURDE, WTPHCJ
 			spkr = s4[-int(arg):] + s4[:-int(arg)] # rotate s4 by arg
 			s.write((myDSS_ID + spkr + "\n").encode())
@@ -291,8 +297,12 @@ def ALS_handler(address, *args):
 	#client.send_message("/5/battery2", (args[0] - 30) / 225.0)
 
 # TODO: only need one ALS_Handler
+# TODO: print response from arduino for each message
 def ALS_fade_handler(address, *args):
 	"""Handles OSC Messages: "/ALS/fade"
+	/ALS/fade i
+	+i = lights up for i seconds
+	-i = lights dn for i seconds
 	"""
 	s = DSSapp.SerialPorts['L']
 	s.write((f'{args[0]:+03d}\n').encode())
