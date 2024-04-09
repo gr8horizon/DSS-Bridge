@@ -69,6 +69,8 @@ class DSSBridgeApp(object):
 			state_bin_bool = [a == '1' for a in state_bin]
 			lut_A = np.array([i for i in 'LVURDE--------- LVURDE--------- LVURDE--------- LVURDE----------'])
 			lut_B = np.array([i for i in 'WPHTCJ--------- WPHTCJ--------- WPHTCJ--------- WPHTCJ----------'])
+			lut_B = np.array([i for i in 'HHHHHH--------- WWWWWW--------- FFFFCC--------- FFCCCCX---------'])
+
 			state_str = f'{id}: {state_bin}'
 			if id == 'A':
 				# lut_A[~state_bin_bool] = '-'
@@ -79,6 +81,10 @@ class DSSBridgeApp(object):
 			if id == 'B':
 				lut_B[np.invert(state_bin_bool)] = ' '
 				print(f'B: {"".join(lut_B)}')
+				# print(f'B: {"".join(lut_B[state_bin_bool])}')
+			if id == 'X':
+				lut_B[np.invert(state_bin_bool)] = ' '
+				print(f'X: {"".join(lut_B)}')
 				# print(f'B: {"".join(lut_B[state_bin_bool])}')
 
 			# print(state_str)
@@ -294,6 +300,8 @@ def ALS_handler(address, *args):
 	s = DSSapp.SerialPorts['L']
 	s.write((f'!{args[0]:03d}\n').encode())
 	print("OSC ALS Level Message Received: " + str(args[0]))
+	als_rcv_msg = s.readline().decode()
+	print(als_rcv_msg)
 	#client.send_message("/5/battery2", (args[0] - 30) / 225.0)
 
 # TODO: only need one ALS_Handler
