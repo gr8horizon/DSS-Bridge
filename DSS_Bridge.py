@@ -69,7 +69,7 @@ class DSSBridgeApp(object):
 			state_bin_bool = [a == '1' for a in state_bin]
 			lut_A = np.array([i for i in 'LVURDE--------- LVURDE--------- LVURDE--------- LVURDE----------'])
 			lut_B = np.array([i for i in 'WPHTCJ--------- WPHTCJ--------- WPHTCJ--------- WPHTCJ----------'])
-			lut_B = np.array([i for i in 'HHHHHH--------- WWWWWW--------- FFFFCC--------- FFCCCCX---------'])
+			lut_X = np.array([i for i in 'HHHHHH--------- WWWWWW--------- FFFFCC--------- FFCCCCX---------'])
 
 			state_str = f'{id}: {state_bin}'
 			if id == 'A':
@@ -83,10 +83,11 @@ class DSSBridgeApp(object):
 				print(f'B: {"".join(lut_B)}')
 				# print(f'B: {"".join(lut_B[state_bin_bool])}')
 			if id == 'X':
-				lut_B[np.invert(state_bin_bool)] = ' '
-				print(f'X: {"".join(lut_B)}')
+				lut_X[np.invert(state_bin_bool)] = ' '
+				print(f'X: {"".join(lut_X)}')
 				# print(f'B: {"".join(lut_B[state_bin_bool])}')
 
+			# 20240506 LB: Renamed the second occurence of "lut_B" to "lut_X" in order to correctly reflect state of both B and X DSS's
 			# print(state_str)
 		print()
 		return state_str
