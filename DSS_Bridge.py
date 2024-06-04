@@ -61,7 +61,6 @@ class DSSBridgeApp(object):
 
 	def show_state(self, *etc):
 
-		# TODO: Add X
 		for id in sorted(self.DSS):
 			s = DSSapp.SerialPorts[id]
 			s.write((id + "\n").encode())  # request all output states from DSS
@@ -70,25 +69,24 @@ class DSSBridgeApp(object):
 			lut_A = np.array([i for i in 'LVURDE--------- LVURDE--------- LVURDE--------- LVURDE----------'])
 			lut_B = np.array([i for i in 'WPHTCJ--------- WPHTCJ--------- WPHTCJ--------- WPHTCJ----------'])
 			lut_X = np.array([i for i in 'HHHHHH--------- WWWWWW--------- FFFFCC--------- FFCCCCX---------'])
+			lut_Z = np.array([i for i in 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'])   # '.' = dead spkr
+			z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
 			state_str = f'{id}: {state_bin}'
 			if id == 'A':
-				# lut_A[~state_bin_bool] = '-'
 				lut_A[np.invert(state_bin_bool)] = ' '
 				print(f'A: {"".join(lut_A)}')
-				# print(f'A: {"".join(state_bin)}')
-				# print(f'A: {"".join(lut_A[state_bin_bool])}')
 			if id == 'B':
 				lut_B[np.invert(state_bin_bool)] = ' '
 				print(f'B: {"".join(lut_B)}')
-				# print(f'B: {"".join(lut_B[state_bin_bool])}')
 			if id == 'X':
 				lut_X[np.invert(state_bin_bool)] = ' '
 				print(f'X: {"".join(lut_X)}')
-				# print(f'B: {"".join(lut_B[state_bin_bool])}')
+			if id == 'Z':
+				lut_Z[np.invert(state_bin_bool)] = ' '
+				print(f'Z: {"".join(lut_Z)}')
 
 			# 20240506 LB: Renamed the second occurence of "lut_B" to "lut_X" in order to correctly reflect state of both B and X DSS's
-			# print(state_str)
 		print()
 		return state_str
 
@@ -189,7 +187,7 @@ def DSS_switcher_handler(address, *args):
 	# if address == DSSapp.lastOSCaddress and set(args) == set(DSSapp.lastOSCargs):
 		# return
 
-	z_map = [ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, -1,  0,  7,  1, -1, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18]
+	z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
 	DSSapp.lastOSCaddress = address
 	DSSapp.lastOSCargs = args
@@ -200,7 +198,24 @@ def DSS_switcher_handler(address, *args):
 	# print(len(args))
 	# print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
-	if myDSS_ID == 'X':
+	print(args)
+	if myDSS_ID == 'Z':
+		if args[0] == 'WH':
+			print(args)
+		# print(f'z = {args[1]}')
+		wh_str = str(args[1]) * 18 + str(args[2]) * 18
+		z_bool = [z == '1' for z in wh_str]
+		print(z_map[z_bool])
+		# s = '0' * 64
+		wh_list = ['0' for a in range(64)]
+		print(wh_list)
+
+		for b in z_map[z_bool]:
+			wh_list[b] = '1'
+		print(wh_list)
+		s.write((myDSS_ID + "".join(wh_list) + "\n").encode())
+		# print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+	elif myDSS_ID == 'X':
 		# print(arg for arg in args)
 		# TODO: add OSC msgs for "/DSS/X/Wall" e.g.
 		# /DSS/X 0 1 1 0 --> turn on/off all 6 speakers in [Wall, Floor]
@@ -238,7 +253,7 @@ def DSS_switcher_handler(address, *args):
 			s.write((myDSS_ID + spkr + "\n").encode())
 			print((myDSS_ID + spkr + "\n"))
 
-	if len(args) == 6:
+	elif len(args) == 6:
 		# binary state of 6 speakers in a quadrant: repeated 4 times
 		s6 = ''.join(str(int(arg)) for arg in args)
 		s.write((myDSS_ID + (s6 + '0' * 10) * 4 + "\n").encode())
