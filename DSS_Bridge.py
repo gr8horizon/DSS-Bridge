@@ -19,6 +19,7 @@ rumps.debug_mode(False)
 import socket 
 from pythonosc.udp_client import SimpleUDPClient
 from pythonosc.osc_server import ThreadingOSCUDPServer
+from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import threading
 
@@ -66,9 +67,9 @@ class DSSBridgeApp(object):
 			s.write((id + "\n").encode())  # request all output states from DSS
 			state_bin = s.readline().decode().strip()
 			state_bin_bool = [a == '1' for a in state_bin]
-			lut_A = np.array([i for i in 'LVURDE--------- LVURDE--------- LVURDE--------- LVURDE----------'])
-			lut_B = np.array([i for i in 'WPHTCJ--------- WPHTCJ--------- WPHTCJ--------- WPHTCJ----------'])
-			lut_X = np.array([i for i in 'HHHHHH--------- WWWWWW--------- FFFFCC--------- FFCCCCX---------'])
+			lut_A = np.array([i for i in 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'])
+			lut_B = np.array([i for i in 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'])
+			lut_X = np.array([i for i in 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCCX---------'])
 			lut_Z = np.array([i for i in 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'])   # '.' = dead spkr
 			z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
@@ -187,6 +188,10 @@ def DSS_switcher_handler(address, *args):
 	# if address == DSSapp.lastOSCaddress and set(args) == set(DSSapp.lastOSCargs):
 		# return
 
+
+	# Whoahhhhh.... slowwwww dowwwwwn
+	time.sleep(0.0010)
+
 	z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
 	DSSapp.lastOSCaddress = address
@@ -198,7 +203,6 @@ def DSS_switcher_handler(address, *args):
 	# print(len(args))
 	# print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
-	print(args)
 	if myDSS_ID == 'Z':
 		if args[0] == 'WH':
 			print(args)
@@ -289,6 +293,8 @@ def DSS_switcher_handler(address, *args):
 			# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
 	#else: # poll outputs if no args		
 	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
+	
+
 	DSS_State = s.readline().decode().strip()
 	# print("   MAX: " + DSS_State)
 	client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
@@ -379,17 +385,17 @@ if __name__ == '__main__':
 	# TODO: MSG User when TOO many threads are spawned!!!
 	
 	server_port_PLUGIN = 1337  # OSC-Receive (into DSS_Bridge)
-	server_PLUGIN = ThreadingOSCUDPServer((localip, server_port_PLUGIN), dispatcher)
+	server_PLUGIN = BlockingOSCUDPServer((localip, server_port_PLUGIN), dispatcher)
 	server_thread_PLUGIN = threading.Thread(target=server_PLUGIN.serve_forever)
 	server_thread_PLUGIN.start()
 
 	server_port_MAX = 1336  # OSC-Receive (into DSS_Bridge)
-	server_MAX = ThreadingOSCUDPServer((localip, server_port_MAX), dispatcher)
+	server_MAX = BlockingOSCUDPServer((localip, server_port_MAX), dispatcher)
 	server_thread_MAX = threading.Thread(target=server_MAX.serve_forever)
 	server_thread_MAX.start()
 
 	server_port_QLAB = 1335  # OSC-Receive (into DSS_Bridge)
-	server_QLAB = ThreadingOSCUDPServer((localip, server_port_QLAB), dispatcher)
+	server_QLAB = BlockingOSCUDPServer((localip, server_port_QLAB), dispatcher)
 	server_thread_QLAB = threading.Thread(target=server_QLAB.serve_forever)
 	server_thread_QLAB.start()
 
