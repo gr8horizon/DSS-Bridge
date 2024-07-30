@@ -69,7 +69,7 @@ class DSSBridgeApp(object):
 			state_bin_bool = [a == '1' for a in state_bin]
 			lut_A = np.array([i for i in 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'])
 			lut_B = np.array([i for i in 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'])
-			lut_X = np.array([i for i in 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCCX---------'])
+			lut_X = np.array([i for i in 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------'])   # 'S' for secret :)
 			lut_Z = np.array([i for i in 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'])   # '.' = dead spkr
 			z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
@@ -222,6 +222,15 @@ def DSS_switcher_handler(address, *args):
 	elif myDSS_ID == 'X':
 		# print(arg for arg in args)
 		# TODO: add OSC msgs for "/DSS/X/Wall" e.g.
+
+		# /DSS/X 1 --> turn on/off labyrinth speaker (all others off)
+		if len(args) == 1:
+			spkr = [0] * 64
+			spkr[55] = args[0]
+			spkr = ''.join(str(x) for x in spkr)
+			s.write((myDSS_ID + spkr + "\n").encode())
+			print((myDSS_ID + spkr + "\n"))
+
 		# /DSS/X 0 1 1 0 --> turn on/off all 6 speakers in [Wall, Floor]
 		if len(args) == 4:
 			spkr = [0] * 64
