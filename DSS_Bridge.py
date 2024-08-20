@@ -203,6 +203,8 @@ def DSS_switcher_handler(address, *args):
 	# print(len(args))
 	# print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
+
+	# /DSS/Z WH 0 1 --> turn off/on zip wall/hanging
 	if myDSS_ID == 'Z':
 		if args[0] == 'WH':
 			print(args)
