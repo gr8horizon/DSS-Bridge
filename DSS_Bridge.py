@@ -67,6 +67,16 @@ class DSSBridgeApp(object):
 			s.write((id + "\n").encode())  # request all output states from DSS
 			state_bin = s.readline().decode().strip()
 			state_bin_bool = [a == '1' for a in state_bin]
+			spkr_ids = dict()
+			spkr_ids['A'] = 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'
+			spkr_ids['B'] = 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'
+			spkr_ids['X'] = 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------'
+			spkr_ids['Z'] = 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'
+			# spkr_ids['Lab'] = 'WWWWWWWWWWWWWWWWWWHHHHHHHHHHHHHHHHHH----------------------------'  # labyrinth (L is lights ??)
+			# spkr_ids['F'] = 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'  # foyer
+
+
+
 			lut_A = np.array([i for i in 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'])
 			lut_B = np.array([i for i in 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'])
 			lut_X = np.array([i for i in 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------'])   # 'S' for secret :)
@@ -155,20 +165,46 @@ class DSSBridgeApp(object):
 def rotate(s, n):
     return s[n:] + s[:n]
 
+# TODO: zip / vortex built into DSS_Bridge
+# 
+# def do_every(period,f,*args):
+#     def g_tick():
+#         t = time.time()
+#         while True:
+#             t += period
+#             yield max(t - time.time(),0)
+#     g = g_tick()
+#     while True:
+#         time.sleep(next(g))
+#         f(*args)
+#
+# def hello(s):
+#     print('hello {} ({:.4f})'.format(s,time.time()))
+#     time.sleep(.3)
+#
+# do_every(1,hello,'foo')
+
 def filter_handler(address, *args):
     print("OSC Message Received: " + f"{address}: {args}")
 
 def DSS_handler(address, *args):
 	# I want to send '/DSS ALV BH XHC'
 
-	bank_A_spkr_ids = ['L','V','U','R','D','E']
-	bank_B_spkr_ids = ['W','P','H','T','C','J']
+	for id in self.DSS:
+		
 
-	for spkr_bank in args:
-		if spkr_bank[0] == 'A':
-			for spkr in spkr_bank[0][1:]:
-				# switch A - find match in list of speakers
-				print(spkr)
+		spkr_ids = dict()
+		spkr_ids['A'] = ['L','V','U','R','D','E']
+		spkr_ids['B'] = ['W','P','H','T','C','J']
+
+
+		for spkr_bank in args:
+			if spkr_bank[0] == id:
+				# s = DSSapp.SerialPorts[id]
+				# s.write(('-\n').encode())  # clear output state
+
+				for spkr in spkr_bank[0][1:]:
+					print(spkr_ids[id].index(spkr))
 				
 
 
