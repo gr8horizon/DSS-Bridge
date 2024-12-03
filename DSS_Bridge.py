@@ -244,19 +244,24 @@ def DSS_switcher_handler(address, *args):
 	if myDSS_ID == 'Z':
 		if args[0] == 'WH':
 			print(args)
-		# print(f'z = {args[1]}')
-		wh_str = str(args[1]) * 18 + str(args[2]) * 18
-		z_bool = [z == '1' for z in wh_str]
-		print(z_map[z_bool])
-		# s = '0' * 64
-		wh_list = ['0' for a in range(64)]
-		print(wh_list)
+			# print(f'z = {args[1]}')
+			wh_str = str(args[1]) * 18 + str(args[2]) * 18
+			z_bool = [z == '1' for z in wh_str]
+			print(z_map[z_bool])
+			# s = '0' * 64
+			wh_list = ['0' for a in range(64)]
+			print(wh_list)
 
-		for b in z_map[z_bool]:
-			wh_list[b] = '1'
-		print(wh_list)
-		s.write((myDSS_ID + "".join(wh_list) + "\n").encode())
-		# print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+			for b in z_map[z_bool]:
+				wh_list[b] = '1'
+			print(wh_list)
+			s.write((myDSS_ID + "".join(wh_list) + "\n").encode())
+			# print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+		elif len(args) == 2:
+			# /DSS/Z 16 0 --> turn off speaker Z16 
+				s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
+				print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+
 	elif myDSS_ID == 'X':
 		# print(arg for arg in args)
 		# TODO: add OSC msgs for "/DSS/X/Wall" e.g.
@@ -313,9 +318,9 @@ def DSS_switcher_handler(address, *args):
 	elif len(args) == 2:
 		# /DSS/A 16 0 --> A160
 		# z_map = [4,31,14,9,3,11,15,16,36,13,12,10,6,?,1,8,2,x,35,34,30,29,20,21,25,17,18,28,24,26,27,23,22,33,32,19] # 7 missing, 5(from H3?)   [base-1!!]
-		if myDSS_ID == 'Z':
-			s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
-			print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+		# if myDSS_ID == 'Z':
+		# 	s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
+		# 	print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
 		else:
 			s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
 			print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
