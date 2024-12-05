@@ -228,6 +228,7 @@ def DSS_switcher_handler(address, *args):
 	# Whoahhhhh.... slowwwww dowwwwwn
 	time.sleep(0.0010)
 
+	# rewired DSS_Z inputs and we can remove this random map nonsense
 	z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
 	DSSapp.lastOSCaddress = address
@@ -240,9 +241,10 @@ def DSS_switcher_handler(address, *args):
 	# print(args)
 	s = DSSapp.SerialPorts[myDSS_ID]
 
-	# /DSS/Z WH 0 1 --> turn off/on zip wall/hanging
+	
 	if myDSS_ID == 'Z':
 		if args[0] == 'WH':
+			# /DSS/Z WH 0 1 --> turn off/on zip wall/hanging
 			print(args)
 			# print(f'z = {args[1]}')
 			wh_str = str(args[1]) * 18 + str(args[2]) * 18
@@ -257,11 +259,39 @@ def DSS_switcher_handler(address, *args):
 			print(wh_list)
 			s.write((myDSS_ID + "".join(wh_list) + "\n").encode())
 			# print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+
+		elif len(args) == 20:
+			# /DSS/Z 0 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 1  0 1  --> assign this state: [0 1 1 0 1 1...1] to these groups [0 1] = [Wall, Hanging]
+			spkr = [0] * 64
+			print(args)
+			if int(args[18]) == 1:  # Wall
+				spkr[0:18] = args[0:18]
+			if int(args[19]) == 1:  # Hanging
+				spkr[18:36] = args[0:18]
+			spkr = ''.join(str(x) for x in spkr)
+			s.write((myDSS_ID + spkr + "\n").encode())
+			print((myDSS_ID + spkr + "\n"))
+
 		elif len(args) == 2:
 			# /DSS/Z 16 0 --> turn off speaker Z16 
-				s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
-				print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
+			s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
+			print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
 
+		elif len(args) == 1:
+			# /DSS/Z 16
+			# /DSS/Z clear
+			# only allow one Z at a time, or clear all speakers
+			spkr = [0] * 64
+			print(args[0])
+			if args[0] == 'clear':
+				pass
+			else:
+				spkr[int(args[0])] = 1
+			spkr = ''.join(str(x) for x in spkr)
+			s.write((myDSS_ID + spkr + "\n").encode())
+			print((myDSS_ID + spkr + "\n"))
+
+			
 	elif myDSS_ID == 'X':
 		# print(arg for arg in args)
 		# TODO: add OSC msgs for "/DSS/X/Wall" e.g.
@@ -321,9 +351,8 @@ def DSS_switcher_handler(address, *args):
 		# if myDSS_ID == 'Z':
 		# 	s.write((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n").encode())
 		# 	print((myDSS_ID + ("%02d" % z_map[args[0]]) + str(args[1]) + "\n"))
-		else:
-			s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
-			print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
+		s.write((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n").encode())
+		print((myDSS_ID + ("%02d" % args[0]) + str(args[1]) + "\n"))
 
 	elif len(args) == 1:
 		arg = args[0]
