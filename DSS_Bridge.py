@@ -83,6 +83,7 @@ class DSSBridgeApp(object):
 			lut_Z = np.array([i for i in 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'])   # '.' = dead spkr
 			z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
 
+			# TODO: add /DSS/state or /DSS to send state string message over OSC to listeners on e.g.:1338
 			state_str = f'{id}: {state_bin}'
 			if id == 'A':
 				lut_A[np.invert(state_bin_bool)] = ' '
@@ -281,9 +282,13 @@ def DSS_switcher_handler(address, *args):
 			# /DSS/Z 16
 			# /DSS/Z clear
 			# only allow one Z at a time, or clear all speakers
+			
+
 			spkr = [0] * 64
 			print(args[0])
 			if args[0] == 'clear':
+				pass
+			elif args[0] == 'reset':
 				pass
 			else:
 				spkr[int(args[0])] = 1
