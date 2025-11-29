@@ -151,7 +151,10 @@ class DSSBridgeApp(object):
 			#self.log.default_text += port_name + "\n"
 			print(f'{DSS_ID[0]} found at {port_name}')
 
-		if DSS_IDs:
+		if len(DSS_IDs) < 5:  # A,B,L,X,Z
+			self.DSS_button.title = '< 5 DSS Online'
+			self.app.icon = "Audium_Logo_Question.png"
+		elif DSS_IDs:
 			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
 			self.app.icon = "Audium_Logo.png"
 			self.DSS = dict(zip(DSS_IDs, port_names))
@@ -267,13 +270,13 @@ def DSS_switcher_handler(address, *args):
 	
 	if myDSS_ID == 'Z':
 
-		# now = time.time()
+		now = time.time()
 		# print(now - last_z)
-		# if (now - last_z) < 0.005:  # drop z-msgs w/in 10 ms 
-		# 	# print('skipped z msgs')
-		# 	return()
-		# else:
-		# 	last_z = now
+		if (now - last_z) < 0.005:  # drop z-msgs w/in 5 ms 
+			rate_print('skipped z msgs')
+			return()
+		else:
+			last_z = now
 
 		if args[0] == 'WH':
 			# /DSS/Z WH 0 1 --> turn off/on zip wall/hanging
@@ -413,13 +416,16 @@ def DSS_switcher_handler(address, *args):
 		# elif isinstance(arg, int):
 		#  	s.write((myDSS_ID + ("%02d" % arg) + "\n").encode())  # toggle output state of one switch
 			# print((myDSS_ID + ("%02d" % arg) + "\n").encode())
-	#else: # poll outputs if no args		
-	s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
-	
+	#else: # poll outputs if no args
+	try:		
+		s.write((myDSS_ID + "\n").encode())  # request all output states from DSS
+	except:
+		return()
 
 	DSS_State = s.readline().decode().strip()
 	# print("   MAX: " + DSS_State)
-	client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
+	# 251128: disabled until we understand this...
+	#client.send_message("/DSS/" + myDSS_ID, DSS_State[-64:])  # Send DSS output state (remove leading char)
 
 
 def obj_handler(address, *args):
@@ -527,7 +533,7 @@ if __name__ == '__main__':
 	
 	#--------------
 
-	# todo: think about what to do when we lose all or 1 or gain an additional one.
+	# todo: think about what to do when we lose all or 1 or gain an additional one. 251128: reqd 5 devices.
 	# disabled until we can figure out how to deal with Metro and changing /dev names
 	# enabled again 5/6/22
 	devwatcher_thread = threading.Thread(target=dev_watcher)
