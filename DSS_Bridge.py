@@ -23,6 +23,10 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 from pythonosc.dispatcher import Dispatcher
 import threading
 
+last = 0
+last_z = 0
+too_fast = False
+
 # import remi
 
 # class WebApp(remi.App):
@@ -216,6 +220,19 @@ def DSS_handler(address, *args):
 	# else:
 	# 	client.send_message("/DSS", "?")
 
+def rate_print(*args, **kwargs):
+	global last
+	global too_fast
+	now = time.time()
+	if (now - last) >= 0.020:
+		last = now
+		print(*args, **kwargs)
+		if too_fast:
+			print('z messages faster than 20 ms')  # and some not printed.  TODO: could concatenate in-between
+		too_fast = False
+	else:
+		too_fast = True
+
 def DSS_switcher_handler(address, *args):
 	"""Handles OSC Messages: "/DSS/*"
 
@@ -225,6 +242,7 @@ def DSS_switcher_handler(address, *args):
 	# if address == DSSapp.lastOSCaddress and set(args) == set(DSSapp.lastOSCargs):
 		# return
 
+	global last_z
 
 	# Whoahhhhh.... slowwwww dowwwwwn
 	time.sleep(0.0010)
@@ -240,10 +258,22 @@ def DSS_switcher_handler(address, *args):
 	# print(myDSS_ID)
 	# print(len(args))
 	# print(args)
-	s = DSSapp.SerialPorts[myDSS_ID]
+	try:
+		s = DSSapp.SerialPorts[myDSS_ID]
+	except:
+		return()
 
 	
 	if myDSS_ID == 'Z':
+
+		# now = time.time()
+		# print(now - last_z)
+		# if (now - last_z) < 0.005:  # drop z-msgs w/in 10 ms 
+		# 	# print('skipped z msgs')
+		# 	return()
+		# else:
+		# 	last_z = now
+
 		if args[0] == 'WH':
 			# /DSS/Z WH 0 1 --> turn off/on zip wall/hanging
 			print(args)
@@ -264,14 +294,19 @@ def DSS_switcher_handler(address, *args):
 		elif len(args) == 20:
 			# /DSS/Z 0 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 1  0 1  --> assign this state: [0 1 1 0 1 1...1] to these groups [0 1] = [Wall, Hanging]
 			spkr = [0] * 64
-			print(args)
+			# print(args)
 			if int(args[18]) == 1:  # Wall
 				spkr[0:18] = args[0:18]
 			if int(args[19]) == 1:  # Hanging
 				spkr[18:36] = args[0:18]
 			spkr = ''.join(str(x) for x in spkr)
-			s.write((myDSS_ID + spkr + "\n").encode())
-			print((myDSS_ID + spkr + "\n"))
+			# time.sleep(0.0010) # added for Pat's M4L Switcher (?)  ...but it's already above
+			try:
+				s.write((myDSS_ID + spkr + "\n").encode())
+			except:
+				return()
+			rate_print((myDSS_ID + spkr + "\n"))
+			# print((myDSS_ID + spkr + "\n"))
 
 		elif len(args) == 2:
 			# /DSS/Z 16 0 --> turn off speaker Z16 
