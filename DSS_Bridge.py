@@ -261,6 +261,7 @@ def DSS_switcher_handler(address, *args):
 	try:
 		s = DSSapp.SerialPorts[myDSS_ID]
 	except:
+		# TODO: Tell the user _once_ that DSS_# is offline 
 		return()
 
 	
