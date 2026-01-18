@@ -1,14 +1,16 @@
+#!/usr/bin/env python3
+__version__ = "1.1.0"
+__author__ = "P. Barton"
+
 # DSS_Bridge
 #
 # Identify available DSS boards
 # Facilitate OSC command control
-# P. Barton
 #
 # * makes the assumption that all /dev/cu.usbmodem* are DSS (Arduino Nano Every)
-# see setup.py for application building instructions
 #
 # requires: python3.9 (download from python.org)
-#   pip3 install rumps pyserial python-osc remi
+#   pip3 install rumps pyserial python-osc glob (remi)
 
 import os, re, serial, time, glob
 import numpy as np
@@ -47,16 +49,27 @@ too_fast = False
 
 class DSSBridgeApp(object):
 	def __init__(self):
+
 		self.app = rumps.App("DSS Bridge")
 		self.app.icon = "Audium_Logo_Question.png"
 		self.app.title = ""
+		
 		# self.log = rumps.Window(message="", title="OSC Log", default_text="", ok="OK", cancel="Clear", dimensions=(300,400))
-		self.find_DSS_button = rumps.MenuItem(title="Find DSS...", callback=self.find_DSS)
+		self.version_item = rumps.MenuItem(title=f" - DSS v{__version__} - ", callback=None)
 		self.DSS_button = rumps.MenuItem(title="NO DSS Online", callback=None)
-		self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
-		self.reset_button = rumps.MenuItem(title="Reset DSS", callback=self.reset_DSS)
+		self.find_DSS_button = rumps.MenuItem(title="Find", callback=self.find_DSS)
+		# self.log_button = rumps.MenuItem(title="Log", callback=self.show_log)
+		self.reset_button = rumps.MenuItem(title="Reset", callback=self.reset_DSS)
 		self.state_button = rumps.MenuItem(title="State", callback=self.show_state)
-		self.app.menu = [self.DSS_button, self.find_DSS_button, self.reset_button, self.state_button]
+
+		self.app.menu = [
+			self.version_item, 
+			self.DSS_button, 
+			self.state_button,
+			self.find_DSS_button, 
+			self.reset_button 
+		]
+
 		self.lastOSCaddress = None
 		self.lastOSCargs = []
 		
@@ -65,46 +78,43 @@ class DSSBridgeApp(object):
 
 
 	def show_state(self, *etc):
+		"""Requests and displays speaker states from DSS boards.
+
+	    This method iterates through all connected DSS controllers, queries their 
+	    current output states via serial, and prints a masked string representing 
+	    active speakers. For speakers (A, B, X, Z), it maps 64-bit binary states to 
+	    specific speaker labels. For 'L', it prints the 8-bit light level.
+	    """
+		SPEAKER_CONFIG = {
+		    'A': 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------',
+		    'B': 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------',
+		    'X': 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------',
+		    'Z': 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'
+		}
+
+		luts = {key: np.array(list(val)) for key, val in SPEAKER_CONFIG.items()}
+
+		print ('\n======== SPEAKER STATES ===========================================')
 
 		for id in sorted(self.DSS):
-			s = DSSapp.SerialPorts[id]
-			s.write((id + "\n").encode())  # request all output states from DSS
-			state_bin = s.readline().decode().strip()
-			state_bin_bool = [a == '1' for a in state_bin]
-			spkr_ids = dict()
-			spkr_ids['A'] = 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'
-			spkr_ids['B'] = 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'
-			spkr_ids['X'] = 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------'
-			spkr_ids['Z'] = 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'
-			# spkr_ids['Lab'] = 'WWWWWWWWWWWWWWWWWWHHHHHHHHHHHHHHHHHH----------------------------'  # labyrinth (L is lights ??)
-			# spkr_ids['F'] = 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'  # foyer
+		    s = DSSapp.SerialPorts[id]
+		    s.write(f"{id}\n".encode())
+		    
+		    # Read and process state
+		    state_bin = s.readline().decode().strip()
+		    state_bin_bool = np.array([a == '1' for a in state_bin])
+		    
+		    if id in luts:
+		        display_lut = luts[id].copy()	# Create a display copy so we don't permanently destroy the LUT data
+		        display_lut[~state_bin_bool] = ' '	# Use NumPy indexing to mask inactive speakers with a space
+		        print(f'{id}: {"".join(display_lut)}')
+		        
+		    elif id == 'L':
+		        # Special case for L: just print the raw binary string
+		        print(f'L: {state_bin}')
 
+		print ('===================================================================\n')
 
-
-			lut_A = np.array([i for i in 'LVURDE----------LVURDE----------LVURDE----------LVURDE----------'])
-			lut_B = np.array([i for i in 'WPHTCJ----------WPHTCJ----------WPHTCJ----------WPHTCJ----------'])
-			lut_X = np.array([i for i in 'HHHHHH----------WWWWWW----------FFFFCC----------FFCCCC-S--------'])   # 'S' for secret :)
-			lut_Z = np.array([i for i in 'WWWWWWWWWWWW.WWW.WHHHHHHHHHHHHHHHHHH----------------------------'])   # '.' = dead spkr
-			z_map = np.array([ 3, 30, 13,  8,  2, 10, 14, 15, 35, 12, 11,  9,  5, 63,  0,  7,  1, 63, 34, 33, 29, 28, 19, 20, 24, 16, 17, 27, 23, 25, 26, 22, 21, 32,31, 18])
-
-			# TODO: add /DSS/state or /DSS to send state string message over OSC to listeners on e.g.:1338
-			state_str = f'{id}: {state_bin}'
-			if id == 'A':
-				lut_A[np.invert(state_bin_bool)] = ' '
-				print(f'A: {"".join(lut_A)}')
-			if id == 'B':
-				lut_B[np.invert(state_bin_bool)] = ' '
-				print(f'B: {"".join(lut_B)}')
-			if id == 'X':
-				lut_X[np.invert(state_bin_bool)] = ' '
-				print(f'X: {"".join(lut_X)}')
-			if id == 'Z':
-				lut_Z[np.invert(state_bin_bool)] = ' '
-				print(f'Z: {"".join(lut_Z)}')
-
-			# 20240506 LB: Renamed the second occurence of "lut_B" to "lut_X" in order to correctly reflect state of both B and X DSS's
-		print()
-		return state_str
 
 	def reset_DSS(self, *etc):
 		for id in self.DSS:
@@ -151,17 +161,17 @@ class DSSBridgeApp(object):
 			#self.log.default_text += port_name + "\n"
 			print(f'{DSS_ID[0]} found at {port_name}')
 
-		if len(DSS_IDs) < 5:  # A,B,L,X,Z
-			self.DSS_button.title = '< 5 DSS Online'
+		if len(DSS_IDs) < 4:  # A,B,L,X,(Z)
+			self.DSS_button.title = '! < 4 DSS Online'
 			self.app.icon = "Audium_Logo_Question.png"
 		elif DSS_IDs:
-			self.DSS_button.title = "DSS Online: " + ' '.join(sorted(DSS_IDs))
+			self.DSS_button.title = "Online: " + ' '.join(sorted(DSS_IDs))
 			self.app.icon = "Audium_Logo.png"
 			self.DSS = dict(zip(DSS_IDs, port_names))
 			for DSS_ID in DSS_IDs:
 				self.SerialPorts[DSS_ID] = serial.Serial(port=(self.DSS[DSS_ID]), baudrate=1000000, dsrdtr=True, timeout=1)
 		else:
-			self.DSS_button.title = 'No DSS Online'
+			self.DSS_button.title = '! No DSS Online'
 			self.app.icon = "Audium_Logo_Question.png"
 			self.DSS = {}
 			# rumps.alert(title="Audium DSS Bridge", message="No DSS Found", 
@@ -467,14 +477,15 @@ def ALS_fade_handler(address, *args):
 	print(f'OSC ALS Fade Message Received: {args[0]:+03d}')
 
 
-def dev_watcher():
-	while True: 
-		time.sleep(1)  # too fast? maybe 5 s
-		dev_names = glob.glob("/dev/cu.usbmodem2111*")  # gloves are 123456799992
-		#print(set(dev_names).difference(set(DSSapp.DSS.values())))
-		if set(dev_names) != set(DSSapp.DSS.values()):
-			print("devices different... attempting to re-find")
-			DSSapp.find_DSS()
+# Turned off while addressing Z fails and L flashes 251201
+# def dev_watcher():
+# 	while True: 
+# 		time.sleep(1)  # too fast? maybe 5 s
+# 		dev_names = glob.glob("/dev/cu.usbmodem2111*")  # gloves are 123456799992
+# 		#print(set(dev_names).difference(set(DSSapp.DSS.values())))
+# 		if set(dev_names) != set(DSSapp.DSS.values()):
+# 			print("devices different... attempting to re-find")
+# 			DSSapp.find_DSS()
 
 def remi_start():
 	remi.start(WebApp, debug=True, address='127.0.0.1', port=8081, start_browser=True, multiple_instance=True)
@@ -493,6 +504,7 @@ if __name__ == '__main__':
 	localip = host_ipaddresses[hostname] # localip = "127.0.0.1" fails (known issue)
 	# print(hostname)
 	print(f'Local IP: {localip}')
+	os.system('clear')
 
 	DSSapp = DSSBridgeApp()
 	DSSapp.find_DSS()
@@ -536,8 +548,8 @@ if __name__ == '__main__':
 	# todo: think about what to do when we lose all or 1 or gain an additional one. 251128: reqd 5 devices.
 	# disabled until we can figure out how to deal with Metro and changing /dev names
 	# enabled again 5/6/22
-	devwatcher_thread = threading.Thread(target=dev_watcher)
-	devwatcher_thread.start()
+	# devwatcher_thread = threading.Thread(target=dev_watcher)
+	# devwatcher_thread.start()
 
 	# print(DSSapp.show_state())
 	# remi_thread = threading.Thread(target=remi_start)
